@@ -824,8 +824,8 @@ function renderJokesList() {
         </div>`:'<div class="joke-row-sub">Нет данных — нажми › чтобы открыть</div>'}
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-        <button onclick="startEdit(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Редактировать">✏️</button>
-        <button onclick="deleteJoke(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Удалить">🗑</button>
+        <button onclick="event.stopPropagation();startEdit(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Редактировать">✏️</button>
+        <button onclick="event.stopPropagation();deleteJoke(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Удалить">🗑</button>
         <span style="color:var(--text3);font-size:18px;cursor:pointer" onclick="openDetail(${i})">›</span>
       </div>
     </div>`;
