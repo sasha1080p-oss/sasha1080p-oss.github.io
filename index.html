@@ -1,4 +1,40 @@
-А, понял — при нажатии на ✏️ не выскакивает клавиатура на телефоне. Это потому что поле ввода появляется в DOM но фокус не срабатывает в Telegram. Исправлю:Готово — увеличил задержку до 100ms и добавил `.click()` чтобы Telegram точно поднял клавиатуру. Загружай на GitHub.html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow: hidden; }
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SetLog — трекер реакций</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg2: #141414;
+  --bg3: #1e1e1e;
+  --border: rgba(255,255,255,0.08);
+  --text: #f0f0f0;
+  --text2: #888;
+  --text3: #555;
+  --accent: #c8ff00;
+  --accent-dim: rgba(200,255,0,0.12);
+  --red: #ff4545;
+  --amber: #ffaa00;
+  --green: #00e676;
+  --teal: #00bcd4;
+  --r0: #ff4545; --r0b: rgba(255,69,69,0.15);
+  --r1: #ff8c00; --r1b: rgba(255,140,0,0.15);
+  --r2: #888;    --r2b: rgba(136,136,136,0.15);
+  --r3: #00bcd4; --r3b: rgba(0,188,212,0.15);
+  --r4: #c8ff00; --r4b: rgba(200,255,0,0.15);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-head: 'Unbounded', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow: hidden; }
 
 /* App shell */
 #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
@@ -827,7 +863,14 @@ function startEdit(i) {
       <button onclick="saveEdit(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">Сохранить</button>
       <button onclick="renderJokesList()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Отмена</button>
     </div>`;
-  setTimeout(() => { const inp = document.getElementById('edit-inp-'+i); inp?.focus(); inp?.select(); }, 50);
+  setTimeout(() => {
+    const inp = document.getElementById('edit-inp-'+i);
+    if (inp) {
+      inp.focus();
+      inp.click();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+    }
+  }, 100);
   if (tg) tg.HapticFeedback?.impactOccurred('light');
 }
 
@@ -1006,7 +1049,14 @@ function startEditVenue(i) {
       <button onclick="saveEditVenue(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">Сохранить</button>
       <button onclick="renderVenues()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Отмена</button>
     </div>`;
-  setTimeout(() => { const inp = document.getElementById('vedit-'+i); inp?.focus(); inp?.select(); }, 50);
+  setTimeout(() => {
+    const inp = document.getElementById('vedit-'+i);
+    if (inp) {
+      inp.focus();
+      inp.click();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+    }
+  }, 100);
 }
 
 function saveEditVenue(i) {
