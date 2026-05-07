@@ -1062,6 +1062,1514 @@ function startEdit(i) {
 }
 
 function saveEdit(i) {
+  const inp = document.getElementById('edit-inp-'+i);
+  const val = inp?.value.trim();
+  if (!val) return;
+  inp?.blur();
+  jokes[i] = val;
+  persist();
+  toast('Сохранено');
+  setTimeout(() => {
+    renderJokesList();
+    renderLog();
+  }, 100);
+}
+
+function deleteJoke(i) {
+  deleteJokeConfirmed(i);
+}
+
+/* ── JOKE DETAIL ── */
+let detailJi = null, detailVf = '', detailChart = null;
+
+function getJokeShows(ji, vf='') {
+  return shows.filter(s=>s.ratings[ji]!==undefined&&(!vf||s.venue===vf))
+    .map(s=>({venue:s.venue,aud:s.aud,date:s.date,score:s.ratings[ji]}));
+}
+
+function openDetail(ji) {
+  detailJi = ji; detailVf = '';
+  document.getElementById('jk-list-view').style.display = 'none';
+  document.getElementById('jk-detail-view').style.display = 'block';
+  document.getElementById('content').scrollTop = 0;
+  _renderDetail();
+  if (tg) tg.BackButton?.show();
+  if (tg) tg.BackButton?.onClick(closeDetail);
+}
+
+function closeDetail() {
+  if (detailChart) { detailChart.destroy(); detailChart=null; }
+  document.getElementById('jk-list-view').style.display = 'block';
+  document.getElementById('jk-detail-view').style.display = 'none';
+  if (tg) tg.BackButton?.hide();
+}
+
+function _renderDetail() {
+  const ji = detailJi, vf = detailVf;
+  const allH = getJokeShows(ji,'');
+  const filtH = vf ? allH.filter(h=>h.venue===vf) : allH;
+  const sc = filtH.map(h=>h.score);
+  const a = sc.length ? avg(sc) : null;
+  const trend = sc.length>=2 ? sc[sc.length-1]-sc[0] : null;
+
+  document.getElementById('d-name').textContent = jokes[ji];
+
+  const trendText = trend===null?'—':trend>0?'↑ Растёт':trend<0?'↓ Падает':'→ Стабильно';
+  const trendColor = trend===null||trend===0?'var(--text3)':trend>0?'var(--accent)':'var(--red)';
+  document.getElementById('d-metrics').innerHTML = `
+    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">Балл</div></div>
+    <div class="metric"><div class="metric-val">${filtH.length}</div><div class="metric-lbl">Проверки</div></div>
+    <div class="metric"><div class="metric-val" style="font-size:14px;color:${trendColor}">${trendText}</div><div class="metric-lbl">Тренд</div></div>`;
+
+  const venues = ['Все',...new Set(allH.map(h=>h.venue))];
+  document.getElementById('d-chips').innerHTML = venues.map(v =>
+    `<button class="chip${detailVf===(v==='Все'?'':v)?' on':''}" onclick="setDetailVf('${v==='Все'?'':v}',this)">${v}</button>`
+  ).join('');
+
+  document.getElementById('d-hist').innerHTML = filtH.length ?
+    filtH.map((h,idx)=>`
+      <div class="show-row">
+        <div style="width:20px;text-align:center;font-size:11px;color:var(--text3);flex-shrink:0">${idx+1}</div>
+        <div class="show-info">
+          <div class="show-venue">${h.venue}</div>
+          <div class="show-meta">${h.date} · ${h.aud}</div>
+        </div>
+        <span class="pill pill-${h.score}">${RNAMES[h.score]}</span>
+      </div>`).join('') :
+    '<div class="empty" style="padding:24px"><div class="empty-text">Нет данных</div></div>';
+
+  document.getElementById('d-insights').innerHTML = buildInsights(ji, allH).map(ins=>
+    `<div class="insight"><div class="ins-title">${ins.t}</div><div class="ins-text">${ins.b}</div></div>`
+  ).join('');
+
+  _drawChart(filtH);
+}
+
+function setDetailVf(v, btn) {
+  detailVf = v;
+  document.getElementById('d-chips').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  _renderDetail();
+}
+
+function _drawChart(hist) {
+  if (detailChart) { detailChart.destroy(); detailChart=null; }
+  if (!hist.length) return;
+  detailChart = new Chart(document.getElementById('d-chart'), {
+    type: 'line',
+    data: {
+      labels: hist.map(h=>h.date),
+      datasets:[{
+        data: hist.map(h=>h.score),
+        borderColor:'#c8ff00', backgroundColor:'rgba(200,255,0,0.07)',
+        pointBackgroundColor:'#c8ff00', pointRadius:5, borderWidth:2,
+        fill:true, tension:0.35
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+RNAMES[ctx.raw]}}},
+      scales:{
+        y:{min:0,max:4,ticks:{stepSize:1,color:'#555',callback:v=>RNAMES[v]||''},grid:{color:'rgba(255,255,255,0.05)'}},
+        x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}}
+      }
+    }
+  });
+}
+
+function buildInsights(ji, hist) {
+  if (!hist.length) return [{t:'Нет данных',b:'Сыграй хотя бы одно выступление с этой шуткой.'}];
+  const ins = [];
+  const byV = {};
+  hist.forEach(h=>{ if(!byV[h.venue])byV[h.venue]=[]; byV[h.venue].push(h.score); });
+  const va = Object.entries(byV).map(([v,sc])=>({v,a:avg(sc)})).sort((a,b)=>b.a-a.a);
+  if (va.length>=2 && va[0].a-va[va.length-1].a>=1)
+    ins.push({t:`Лучше в «${va[0].v}»`,b:`Средний ${va[0].a.toFixed(1)} против ${va[va.length-1].a.toFixed(1)} в «${va[va.length-1].v}».`});
+  const sc = hist.map(h=>h.score);
+  const trend = sc[sc.length-1]-sc[0];
+  if (sc.length>=3 && trend>=2) ins.push({t:'Шутка обкатывается',b:`За ${sc.length} проверки балл вырос с ${sc[0]} до ${sc[sc.length-1]}. Продолжай использовать.`});
+  if (sc.length>=3 && trend<=-2) ins.push({t:'Шутка выгорает',b:`Балл упал с ${sc[0]} до ${sc[sc.length-1]}. Попробуй переписать панчлайн.`});
+  const a = avg(sc);
+  if (sc.length>=4 && Math.max(...sc)-Math.min(...sc)<=1)
+    ins.push({t:'Стабильный результат',b:`Отклонение минимальное — всегда ${a.toFixed(1)}/4. ${a>=3?'Надёжный материал.':'Потолок невысокий — рассмотри переработку.'}`});
+  if (!ins.length) ins.push({t:'Собирай данные',b:'Нужно больше проверки, чтобы увидеть паттерны.'});
+  return ins;
+}
+
+/* ── VENUES ── */
+function renderVenues() {
+  const el = document.getElementById('venue-cards');
+  if (!venues.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-text">Добавь первую площадку</div></div>';
+    return;
+  }
+  el.innerHTML = venues.map((v,i) => `
+    <div class="joke-row" id="vrow-${i}">
+      <div class="joke-row-info">
+        <div class="joke-row-name" id="vname-${i}">${v}</div>
+        <div class="joke-row-sub">${shows.filter(s=>s.venue===v).length} выступлений</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        <button onclick="startEditVenue(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)">✏️</button>
+        <button onclick="deleteVenue(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+function addVenue() {
+  const inp = document.getElementById('new-venue-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  if (venues.includes(val)) { toast('Такая площадка уже есть'); return; }
+  venues.push(val);
+  persist();
+  inp.value = '';
+  if (tg) tg.HapticFeedback?.impactOccurred('medium');
+  toast('Площадка добавлена');
+  renderVenues();
+  populateVenueSelects();
+}
+
+function startEditVenue(i) {
+  const nameEl = document.getElementById('vname-'+i);
+  const current = venues[i];
+  nameEl.innerHTML = `<input id="vedit-${i}" value="${current.replace(/"/g,'&quot;')}"
+    style="background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)"
+    onkeydown="if(event.key==='Enter')saveEditVenue(${i});if(event.key==='Escape')renderVenues()">
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="saveEditVenue(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">Сохранить</button>
+      <button onclick="renderVenues()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Отмена</button>
+    </div>`;
+  setTimeout(() => {
+    const inp = document.getElementById('vedit-'+i);
+    if (inp) {
+      inp.focus();
+      inp.click();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+    }
+  }, 100);
+}
+
+function saveEditVenue(i) {
+  const val = document.getElementById('vedit-'+i)?.value.trim();
+  if (!val) return;
+  const old = venues[i];
+  venues[i] = val;
+  shows = shows.map(s => s.venue === old ? {...s, venue: val} : s);
+  persist();
+  toast('Сохранено');
+  renderVenues();
+  populateVenueSelects();
+}
+
+function deleteVenue(i) {
+  deleteVenueConfirmed(i);
+}
+
+function resetAll() {
+  showConfirm('Удалить все данные?', 'Шутки, площадки и история выступлений будут сброшены. Это нельзя отменить.', () => {
+    jokes = SEED_JOKES.slice();
+    shows = SEED_SHOWS.slice();
+    venues = SEED_VENUES.slice();
+    persist();
+    if (tg) tg.HapticFeedback?.notificationOccurred('warning');
+    toast('Данные сброшены');
+    renderVenues();
+    renderLog();
+  });
+}
+
+function deleteJokeConfirmed(i) {
+  showConfirm('Удалить шутку?', `"${jokes[i]}" и все данные по ней удалятся.`, () => {
+    jokes.splice(i, 1);
+    const newShows = shows.map(s => {
+      const newR = {};
+      Object.entries(s.ratings).forEach(([k,v]) => {
+        const ki = parseInt(k);
+        if (ki < i) newR[ki] = v;
+        else if (ki > i) newR[ki-1] = v;
+      });
+      return {...s, ratings: newR};
+    });
+    shows = newShows;
+    persist();
+    if (tg) tg.HapticFeedback?.notificationOccurred('warning');
+    toast('Шутка удалена');
+    renderJokesList();
+    renderLog();
+  });
+}
+
+function deleteVenueConfirmed(i) {
+  showConfirm('Удалить площадку?', `"${venues[i]}" будет удалена.`, () => {
+    venues.splice(i, 1);
+    persist();
+    if (tg) tg.HapticFeedback?.notificationOccurred('warning');
+    toast('Площадка удалена');
+    renderVenues();
+    populateVenueSelects();
+  });
+}
+
+function showConfirm(title, text, onOk) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  document.getElementById('confirm-overlay').style.display = 'flex';
+  document.getElementById('confirm-ok').onclick = () => {
+    hideConfirm();
+    onOk();
+  };
+}
+function hideConfirm() {
+  document.getElementById('confirm-overlay').style.display = 'none';
+}
+
+/* ── HISTORY ── */
+function renderHistory() {
+  const el = document.getElementById('hist-list');
+  if (!shows.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Выступлений пока нет</div></div>';
+    return;
+  }
+  const reversed = [...shows].map((s,i)=>({...s,origIdx:i})).reverse();
+  el.innerHTML = reversed.map(s=>{
+    const sc = Object.values(s.ratings);
+    const a = sc.length ? avg(sc) : null;
+    return `<div class="show-row">
+      <div class="show-info">
+        <div class="show-venue">${s.venue}</div>
+        <div class="show-meta">${s.date} · ${s.aud} · ${sc.length} шут.</div>
+        ${s.noteGood ? `<div style="font-size:11px;color:var(--text2);margin-top:3px">📝 ${s.noteGood}</div>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="font-size:15px;font-weight:700;font-family:var(--font-head)" class="${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</span>
+        <button onclick="editShow(${s.origIdx})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)">✏️</button>
+        <button onclick="deleteShow(${s.origIdx})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editShow(i) {
+  const s = shows[i];
+  const el = document.getElementById('hist-list');
+  el.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div class="back-btn" onclick="renderHistory()" style="cursor:pointer">←</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${s.date} · ${s.venue}</div>
+      </div>
+      <div class="sec-label" style="margin-bottom:10px">Оценки шуток</div>
+      ${Object.keys(s.ratings).map(ji => `
+        <div class="card card-sm" style="margin-bottom:8px">
+          <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px">${jokes[ji] || 'Шутка #'+ji}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap" id="edit-r-${ji}">
+            ${RNAMES.map((r,ri) => `<button class="r-btn${s.ratings[ji]===ri?' sel sel-'+ri:''}" onclick="editRate(${i},${ji},${ri})">${r}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+      <div class="sec-label" style="margin-bottom:6px;margin-top:14px">Заметки</div>
+      <textarea id="edit-note" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:80px;line-height:1.5">${s.noteGood||''}</textarea>
+      <button onclick="saveEditShow(${i})" class="btn-primary" style="margin-top:12px">Сохранить</button>
+    </div>`;
+}
+
+function editRate(showIdx, ji, ri) {
+  shows[showIdx].ratings[ji] = ri;
+  document.getElementById('edit-r-'+ji).querySelectorAll('.r-btn').forEach((b,i) => {
+    b.className = 'r-btn' + (i===ri ? ' sel sel-'+ri : '');
+  });
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function saveEditShow(i) {
+  shows[i].noteGood = document.getElementById('edit-note').value.trim();
+  persist();
+  if (tg) tg.HapticFeedback?.notificationOccurred('success');
+  toast('Сохранено');
+  renderHistory();
+}
+
+function deleteShow(i) {
+  showConfirm('Удалить выступление?', `${shows[i].date} · ${shows[i].venue}`, () => {
+    shows.splice(i, 1);
+    persist();
+    if (tg) tg.HapticFeedback?.notificationOccurred('warning');
+    toast('Выступление удалено');
+    renderHistory();
+  });
+}
+
+/* ── CALENDAR ── */
+let calYear, calMonth, calSelected;
+
+function openDatePicker() {
+  const today = new Date();
+  calSelected = calSelected || null;
+  calYear = calSelected ? calSelected.getFullYear() : today.getFullYear();
+  calMonth = calSelected ? calSelected.getMonth() : today.getMonth();
+  renderCal();
+  document.getElementById('cal-overlay').classList.add('open');
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function closeDatePicker() {
+  document.getElementById('cal-overlay').classList.remove('open');
+}
+
+function confirmDatePicker() {
+  if (!calSelected) { toast('Выбери дату'); return; }
+  const iso = calSelected.toISOString().split('T')[0];
+  document.getElementById('l-date').value = iso;
+  const pretty = calSelected.toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+  const btn = document.getElementById('date-btn');
+  const lbl = document.getElementById('date-btn-label');
+  lbl.textContent = pretty;
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.color = 'var(--text)';
+  closeDatePicker();
+  if (tg) tg.HapticFeedback?.notificationOccurred('success');
+}
+
+function calMove(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCal();
+}
+
+function calSelect(y, m, d) {
+  calSelected = new Date(y, m, d);
+  renderCal();
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function renderCal() {
+  const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const DAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  document.getElementById('cal-month-label').textContent = MONTHS[calMonth] + ' ' + calYear;
+
+  const today = new Date();
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay = new Date(calYear, calMonth + 1, 0);
+  let startDow = firstDay.getDay();
+  if (startDow === 0) startDow = 7;
+
+  let html = DAYS.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+  for (let i = 1; i < startDow; i++) {
+    const prevDate = new Date(calYear, calMonth, 1 - (startDow - i));
+    html += `<button class="cal-day other-month" onclick="calSelect(${prevDate.getFullYear()},${prevDate.getMonth()},${prevDate.getDate()})">${prevDate.getDate()}</button>`;
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const isSel = calSelected && calSelected.getFullYear()===calYear && calSelected.getMonth()===calMonth && calSelected.getDate()===d;
+    const cls = isSel ? 'selected' : isToday ? 'today' : '';
+    html += `<button class="cal-day ${cls}" onclick="calSelect(${calYear},${calMonth},${d})">${d}</button>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+/* ── THEME ── */
+function setTheme(t) {
+  document.body.classList.toggle('theme-pink', t==='pink');
+  document.body.classList.remove('theme-mono');
+  lsSet('sdc_theme', t);
+  if (tg) {
+    const bgColor = t==='pink'?'#0f080d':'#0a0a0a';
+    tg.setHeaderColor(bgColor);
+    tg.setBackgroundColor(bgColor);
+  }
+  document.getElementById('theme-dark').style.borderColor = t==='dark'?'#c8ff00':'transparent';
+  document.getElementById('theme-pink').style.borderColor = t==='pink'?'#ffb6d2':'transparent';
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function applyTheme() {
+  const t = lsGet('sdc_theme', 'dark');
+  setTheme(t);
+}
+
+/* ── CONFETTI ── */
+function launchConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const COLORS = ['#c8ff00','#ff6eb4','#ffffff','#ffaa00','#00e676','#ff4545','#00bcd4'];
+  const pieces = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width,
+    y: -20,
+    r: Math.random() * 6 + 3,
+    d: Math.random() * 80 + 20,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    tilt: Math.random() * 10 - 10,
+    tiltAngle: 0,
+    tiltSpeed: Math.random() * 0.07 + 0.05,
+    speed: Math.random() * 4 + 2,
+  }));
+
+  if (tg) tg.HapticFeedback?.notificationOccurred('success');
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.tiltAngle += p.tiltSpeed;
+      p.y += p.speed;
+      p.x += Math.sin(p.tiltAngle) * 2;
+      p.tilt = Math.sin(p.tiltAngle) * 12;
+      ctx.beginPath();
+      ctx.lineWidth = p.r;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+      ctx.stroke();
+    });
+    frame++;
+    if (frame < 180) requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  draw();
+}
+
+/* ── Init ── */
+loadData();
+</script>
+</body>
+</html>
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-body); overflow: hidden; }
+
+/* App shell */
+#app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
+#content { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 16px 100px; scroll-behavior: smooth; }
+#content::-webkit-scrollbar { display: none; }
+
+/* Bottom nav */
+#nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); border-top: 0.5px solid var(--border); display: flex; padding: 8px 0 max(8px, env(safe-area-inset-bottom)); z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; cursor: pointer; transition: all 0.2s; }
+.nav-icon { font-size: 22px; transition: transform 0.2s; }
+.nav-label { font-size: 10px; color: var(--text3); font-family: var(--font-body); transition: color 0.2s; letter-spacing: 0.02em; }
+.nav-item.active .nav-icon { transform: scale(1.1); }
+.nav-item.active .nav-label { color: var(--accent); }
+
+/* Screen transitions */
+.screen { display: none; animation: fadeIn 0.25s ease; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Page header */
+.page-header { padding: 20px 0 16px; }
+.page-title { font-family: var(--font-head); font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+.page-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+/* Cards */
+.card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; }
+.card-sm { padding: 12px 14px; border-radius: var(--radius-sm); }
+
+/* Metric row */
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.metric { background: var(--bg3); border-radius: var(--radius-sm); padding: 12px 10px; text-align: center; }
+.metric-val { font-family: var(--font-head); font-size: 20px; font-weight: 700; color: var(--accent); }
+.metric-lbl { font-size: 10px; color: var(--text3); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Reaction buttons */
+.reactions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.r-btn { padding: 7px 11px; font-size: 12px; font-family: var(--font-body); border: 1px solid var(--border); border-radius: 20px; cursor: pointer; background: transparent; color: var(--text2); transition: all 0.15s; }
+.r-btn:active { transform: scale(0.95); }
+.r-btn.sel { font-weight: 500; }
+.r-btn.sel-0 { background: var(--r0b); border-color: var(--r0); color: var(--r0); }
+.r-btn.sel-1 { background: var(--r1b); border-color: var(--r1); color: var(--r1); }
+.r-btn.sel-2 { background: var(--r2b); border-color: var(--r2); color: var(--r2); }
+.r-btn.sel-3 { background: var(--r3b); border-color: var(--r3); color: var(--r3); }
+.r-btn.sel-4 { background: var(--r4b); border-color: var(--r4); color: var(--r4); }
+
+/* Pill */
+.pill { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; }
+.pill-0 { background: var(--r0b); color: var(--r0); }
+.pill-1 { background: var(--r1b); color: var(--r1); }
+.pill-2 { background: var(--r2b); color: var(--r2); }
+.pill-3 { background: var(--r3b); color: var(--r3); }
+.pill-4 { background: var(--r4b); color: var(--r4); }
+
+/* Accent badge */
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.badge-hot { background: var(--r4b); color: var(--accent); }
+.badge-ok  { background: rgba(255,170,0,0.15); color: var(--amber); }
+.badge-cold{ background: var(--r0b); color: var(--red); }
+
+/* Bar */
+.bar-track { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+/* Select / input */
+select, input[type=text] {
+  width: 100%; background: var(--bg3); border: 0.5px solid var(--border);
+  color: var(--text); font-family: var(--font-body); font-size: 14px;
+  padding: 11px 14px; border-radius: var(--radius-sm); appearance: none;
+  -webkit-appearance: none; outline: none;
+}
+select:focus, input:focus { border-color: var(--accent); }
+.field { margin-bottom: 12px; }
+.field-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Primary button */
+.btn-primary {
+  width: 100%; padding: 15px; background: var(--accent); color: #000;
+  font-family: var(--font-head); font-size: 13px; font-weight: 700;
+  border: none; border-radius: var(--radius); cursor: pointer;
+  letter-spacing: 0.02em; transition: all 0.15s; margin-top: 12px;
+}
+.btn-primary:active { transform: scale(0.98); background: #aadd00; }
+.btn-primary:disabled { background: var(--bg3); color: var(--text3); }
+
+/* Chip filters */
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { font-size: 12px; padding: 6px 12px; border-radius: 20px; border: 0.5px solid var(--border); color: var(--text2); cursor: pointer; background: transparent; white-space: nowrap; transition: all 0.15s; }
+.chip.on { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+/* Joke card clickable */
+.joke-row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 0.5px solid var(--border); cursor: pointer; transition: background 0.15s; }
+.joke-row:last-child { border-bottom: none; }
+.joke-row:active { background: var(--bg3); }
+.joke-row-info { flex: 1; min-width: 0; }
+.joke-row-name { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.joke-row-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* Show row */
+.show-row { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 0.5px solid var(--border); }
+.show-row:last-child { border-bottom: none; }
+.show-info { flex: 1; min-width: 0; }
+.show-venue { font-size: 14px; font-weight: 500; color: var(--text); }
+.show-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+/* Detail header */
+.detail-header { display: flex; align-items: center; gap: 10px; padding: 16px 0 12px; }
+.back-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; flex-shrink: 0; }
+.detail-name { font-family: var(--font-head); font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; }
+
+/* Insight */
+.insight { background: var(--bg3); border-radius: var(--radius-sm); padding: 13px; margin-bottom: 8px; border-left: 3px solid var(--accent); border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+.ins-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.ins-text { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* Chart container */
+.chart-box { background: var(--bg3); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px; }
+
+/* Empty state */
+.empty { text-align: center; padding: 48px 24px; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+/* Section label */
+.sec-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+
+/* Toast */
+#toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--accent); color: #000; font-family: var(--font-head); font-size: 16px; font-weight: 700; padding: 16px 32px; border-radius: 24px; z-index: 99999; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+/* Log joke card accent line */
+.log-joke { border-left: 3px solid var(--bg3); transition: border-color 0.2s; }
+.log-joke.rated { border-left-color: var(--accent); }
+
+/* Trend indicator */
+.trend-up { color: var(--accent); }
+.trend-dn { color: var(--red); }
+.trend-eq { color: var(--text3); }
+
+/* Add joke input row */
+.add-joke-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.add-joke-row input { flex: 1; }
+.add-joke-row button { padding: 11px 14px; background: var(--accent-dim); border: 0.5px solid var(--accent); color: var(--accent); border-radius: var(--radius-sm); cursor: pointer; font-size: 20px; transition: all 0.15s; }
+.add-joke-row button:active { transform: scale(0.95); }
+
+/* Score color helpers */
+.sc-high { color: var(--accent); }
+.sc-mid  { color: var(--amber); }
+.sc-low  { color: var(--red); }
+
+/* Swipe to delete */
+.swipe-wrap { position:relative; overflow:hidden; margin-bottom:8px; border-radius:var(--radius-sm); }
+.swipe-bg { position:absolute; right:0; top:0; bottom:0; width:80px; background:var(--red); display:flex; align-items:center; justify-content:center; font-size:20px; border-radius:var(--radius-sm); }
+.swipe-item { position:relative; transition:transform 0.2s; touch-action:pan-y; background:var(--bg2); border-radius:var(--radius-sm); }
+.swipe-item.swiped { transform:translateX(-80px); }
+
+/* Set picker modal */
+#setpicker-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;justify-content:center; }
+#setpicker-overlay.open { display:flex; }
+#setpicker-box { background:var(--bg2);border-radius:20px 20px 0 0;padding:20px 16px max(20px,env(safe-area-inset-bottom));width:100%;max-width:480px;max-height:80vh;display:flex;flex-direction:column; }
+.setpicker-item { display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:0.5px solid var(--border);cursor:pointer; }
+.setpicker-item:last-child { border-bottom:none; }
+.setpicker-check { width:24px;height:24px;border-radius:50%;border:1.5px solid var(--text3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s; }
+.setpicker-check.on { background:var(--accent);border-color:var(--accent); }
+.setpicker-name { font-size:14px;color:var(--text); }
+
+/* Mono theme */
+body.theme-mono {
+  --bg: #111111;
+  --bg2: #1a1a1a;
+  --bg3: #222222;
+  --border: rgba(255,255,255,0.1);
+  --text: #ffffff;
+  --text2: #aaaaaa;
+  --text3: #555555;
+  --accent: #ffffff;
+  --accent-dim: rgba(255,255,255,0.08);
+  --red: #aaaaaa;
+  --amber: #888888;
+  --green: #cccccc;
+  --teal: #999999;
+  --r0: #ffffff; --r0b: rgba(255,255,255,0.08);
+  --r1: #cccccc; --r1b: rgba(204,204,204,0.08);
+  --r2: #888888; --r2b: rgba(136,136,136,0.08);
+  --r3: #cccccc; --r3b: rgba(204,204,204,0.08);
+  --r4: #ffffff; --r4b: rgba(255,255,255,0.12);
+}
+body.theme-mono #nav { background: rgba(17,17,17,0.95); }
+body.theme-mono { background: var(--bg); }
+body.theme-mono .btn-primary { color: #111; }
+body.theme-mono .cal-day.selected { color: #111; }
+body.theme-mono .bar-fill { background: #ffffff !important; }
+body.theme-mono .badge-hot,
+body.theme-mono .badge-ok,
+body.theme-mono .badge-cold { background: rgba(255,255,255,0.08); color: #ffffff; border: 0.5px solid rgba(255,255,255,0.2); }
+body.theme-mono .trend-up,
+body.theme-mono .trend-dn,
+body.theme-mono .trend-eq { color: #aaaaaa; }
+body.theme-mono .sc-high,
+body.theme-mono .sc-mid,
+body.theme-mono .sc-low { color: #ffffff; }
+body.theme-mono .insight { border-left-color: #ffffff; }
+body.theme-mono .r-btn.sel-0,
+body.theme-mono .r-btn.sel-1,
+body.theme-mono .r-btn.sel-2,
+body.theme-mono .r-btn.sel-3,
+body.theme-mono .r-btn.sel-4 { background: rgba(255,255,255,0.1); border-color: #ffffff; color: #ffffff; }
+body.theme-mono .pill-0,
+body.theme-mono .pill-1,
+body.theme-mono .pill-2,
+body.theme-mono .pill-3,
+body.theme-mono .pill-4 { background: rgba(255,255,255,0.08); color: #ffffff; }
+
+/* Pink theme */
+body.theme-pink {
+  --bg: #0f080d;
+  --bg2: #1c0f18;
+  --bg3: #271520;
+  --border: rgba(255,182,210,0.12);
+  --text: #ffe8f3;
+  --text2: #d4a0bb;
+  --text3: #9a6880;
+  --accent: #ffb6d2;
+  --accent-dim: rgba(255,182,210,0.1);
+  --red: #ff6b8a;
+  --r0: #ff6b8a; --r0b: rgba(255,107,138,0.15);
+  --r1: #ffaa70; --r1b: rgba(255,170,112,0.15);
+  --r2: #d4a0bb; --r2b: rgba(212,160,187,0.15);
+  --r3: #ffb6d2; --r3b: rgba(255,182,210,0.15);
+  --r4: #ffd6e8; --r4b: rgba(255,214,232,0.15);
+}
+body.theme-pink #nav { background: rgba(15,8,13,0.95); }
+body.theme-pink { background: var(--bg); }
+
+/* Calendar */
+#cal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;justify-content:center; }
+#cal-overlay.open { display:flex; }
+#cal-box { background:var(--bg2);border-radius:20px 20px 0 0;padding:20px 16px max(20px,env(safe-area-inset-bottom));width:100%;max-width:480px; }
+.cal-header { display:flex;align-items:center;justify-content:space-between;margin-bottom:16px; }
+.cal-month { font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text); }
+.cal-nav { width:36px;height:36px;border-radius:50%;background:var(--bg3);border:none;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center; }
+.cal-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:14px; }
+.cal-day-name { text-align:center;font-size:11px;color:var(--text3);padding:4px 0; }
+.cal-day { text-align:center;font-size:14px;padding:8px 4px;border-radius:8px;cursor:pointer;color:var(--text2);border:none;background:none; }
+.cal-day:active { background:var(--bg3); }
+.cal-day.today { color:var(--accent);font-weight:700; }
+.cal-day.selected { background:var(--accent);color:#000;font-weight:700; }
+.cal-day.other-month { color:var(--text3);opacity:0.4; }
+.cal-day.empty { cursor:default; }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="content">
+
+    <!-- LOG SCREEN -->
+    <div id="sc-log" class="screen active">
+      <div class="page-header">
+        <div class="page-title">Новое выступление</div>
+        <div class="page-sub">Оцени каждую шутку после шоу</div>
+      </div>
+
+      <div class="field-row" style="margin-bottom:12px">
+        <div class="field">
+          <div class="field-label">Площадка</div>
+          <select id="l-venue"></select>
+        </div>
+        <div class="field">
+          <div class="field-label">Кол-во зрителей</div>
+          <select id="l-aud">
+            <option>Меньше 10</option>
+            <option>10–20</option>
+            <option>20–50</option>
+            <option>50–200</option>
+            <option>Олимпийский</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:12px">
+        <div class="field-label">Дата</div>
+        <button onclick="openDatePicker()" id="date-btn" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:14px;padding:11px 14px;border-radius:var(--radius-sm);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+          <span id="date-btn-label">Выбрать дату</span>
+          <span style="color:var(--text3)">📅</span>
+        </button>
+        <input type="hidden" id="l-date">
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="sec-label" style="margin:0">Сет на сегодня</div>
+        <button onclick="openSetPicker()" style="background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:20px;padding:5px 12px;font-size:12px;font-family:var(--font-body);cursor:pointer">+ Добавить</button>
+      </div>
+      <div id="log-jokes"></div>
+      <div id="log-empty-set" style="display:none;text-align:center;padding:20px;font-size:13px;color:var(--text3)">Нажми «+ Добавить» чтобы выбрать шутки</div>
+
+      <div style="margin-top:14px">
+        <div class="sec-label">Заметки</div>
+        <textarea id="l-note-good" placeholder="Заметки о выступлении..." style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:100px;line-height:1.5"></textarea>
+      </div>
+
+      <button class="btn-primary" id="save-btn" onclick="saveShow()">Сохранить выступление</button>
+    </div>
+
+    <!-- STATS SCREEN -->
+    <div id="sc-stats" class="screen">
+      <div class="page-header">
+        <div class="page-title">Аналитика</div>
+      </div>
+      <div class="metrics" id="st-metrics"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="sec-label" style="margin:0">Рейтинг шуток</div>
+        <select id="st-filter" style="width:auto;font-size:11px;padding:6px 10px" onchange="renderStats()">
+          <option value="">Все площадки</option>
+        </select>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden" id="st-list"></div>
+      <div id="st-notes-wrap" style="margin-top:14px;display:none">
+        <div class="sec-label" style="margin-bottom:8px">Последние заметки</div>
+        <div id="st-notes"></div>
+      </div>
+    </div>
+
+    <!-- JOKES SCREEN -->
+    <div id="sc-jokes" class="screen">
+      <div id="jk-list-view">
+        <div class="page-header">
+          <div class="page-title">Шутки</div>
+        </div>
+        <div class="add-joke-row">
+          <input type="text" id="new-joke-input" placeholder="Добавить шутку..." maxlength="80">
+          <button onclick="addJoke()">+</button>
+        </div>
+        <div style="position:relative;margin-bottom:10px">
+          <input type="text" id="joke-search" placeholder="🔍 Поиск..." oninput="renderJokesList()" style="padding-left:14px">
+        </div>
+        <div class="chips" id="jk-chips"></div>
+        <div class="card" style="padding:0;overflow:hidden" id="jk-cards"></div>
+      </div>
+
+      <div id="jk-detail-view" style="display:none">
+        <div class="detail-header">
+          <div class="back-btn" onclick="closeDetail()">←</div>
+          <div class="detail-name" id="d-name"></div>
+        </div>
+        <div class="metrics" id="d-metrics"></div>
+        <div class="chips" id="d-chips"></div>
+        <div class="chart-box">
+          <div class="sec-label" style="margin-bottom:12px">Динамика</div>
+          <canvas id="d-chart" height="100"></canvas>
+        </div>
+        <div class="sec-label">История</div>
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px" id="d-hist"></div>
+        <div class="sec-label">Инсайты</div>
+        <div id="d-insights"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY SCREEN -->
+    <div id="sc-history" class="screen">
+      <div class="page-header">
+        <div class="page-title">История</div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden" id="hist-list"></div>
+    </div>
+
+    <!-- SETTINGS SCREEN -->
+    <div id="sc-settings" class="screen">
+      <div class="page-header">
+        <div class="page-title">Настройки</div>
+        <div class="page-sub">Твои площадки — используются в выступлениях</div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div class="sec-label" style="margin-bottom:10px">Тема</div>
+        <div style="display:flex;gap:10px">
+          <div id="theme-dark" onclick="setTheme('dark')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:#0a0a0a;cursor:pointer;text-align:center">
+            <div style="font-size:20px;margin-bottom:4px">🖤</div>
+            <div style="font-size:12px;color:#c8ff00;font-weight:500">Тёмная</div>
+          </div>
+          <div id="theme-pink" onclick="setTheme('pink')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid transparent;background:#1a0a12;cursor:pointer;text-align:center">
+            <div style="font-size:20px;margin-bottom:4px">🩷</div>
+            <div style="font-size:12px;color:#ffb6d2;font-weight:500">Розовая</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="add-joke-row">
+        <input type="text" id="new-venue-input" placeholder="Название площадки..." maxlength="60">
+        <button onclick="addVenue()">+</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden" id="venue-cards"></div>
+
+      <div style="margin-top:24px">
+        <div class="sec-label">Сброс</div>
+        <button onclick="resetAll()" style="width:100%;padding:12px;background:none;border:1px solid var(--red);border-radius:var(--radius-sm);color:var(--red);font-size:13px;font-family:var(--font-body);cursor:pointer">
+          Сбросить все данные
+        </button>
+      </div>
+
+      <div style="margin-top:32px;text-align:center;padding-bottom:8px">
+        <div style="font-size:12px;color:var(--text3)">Создатель</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text2);margin-top:4px">Саша Нижегородцев</div>
+      </div>
+    </div>
+
+
+  <nav id="nav">
+    <div class="nav-item active" onclick="go('log')" data-screen="log">
+      <div class="nav-icon">🎤</div>
+      <div class="nav-label">Шоу</div>
+    </div>
+    <div class="nav-item" onclick="go('stats')" data-screen="stats">
+      <div class="nav-icon">📊</div>
+      <div class="nav-label">Аналитика</div>
+    </div>
+    <div class="nav-item" onclick="go('jokes')" data-screen="jokes">
+      <div class="nav-icon">🃏</div>
+      <div class="nav-label">Шутки</div>
+    </div>
+    <div class="nav-item" onclick="go('settings')" data-screen="settings">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">Настройки</div>
+    </div>
+  </nav>
+</div>
+
+<div id="setpicker-overlay">
+  <div id="setpicker-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">Выбери шутки</div>
+      <button onclick="closeSetPicker()" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;padding:0">✕</button>
+    </div>
+    <div id="setpicker-list" style="overflow-y:auto;flex:1"></div>
+    <button onclick="confirmSetPicker()" style="margin-top:14px;width:100%;padding:13px;background:var(--accent);border:none;border-radius:12px;color:#000;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer;flex-shrink:0">Готово</button>
+  </div>
+</div>
+
+<div id="cal-overlay">
+  <div id="cal-box">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="calMove(-1)">‹</button>
+      <div class="cal-month" id="cal-month-label"></div>
+      <button class="cal-nav" onclick="calMove(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="closeDatePicker()" style="flex:1;padding:13px;background:var(--bg3);border:none;border-radius:12px;color:var(--text2);font-size:14px;font-family:var(--font-body);cursor:pointer">Отмена</button>
+      <button onclick="confirmDatePicker()" style="flex:1;padding:13px;background:var(--accent);border:none;border-radius:12px;color:#000;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center">
+  <div style="background:var(--bg2);border-radius:20px 20px 0 0;padding:24px 20px max(24px,env(safe-area-inset-bottom));width:100%;max-width:480px">
+    <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px" id="confirm-title"></div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:20px" id="confirm-text"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="hideConfirm()" style="flex:1;padding:13px;background:var(--bg3);border:none;border-radius:12px;color:var(--text2);font-size:14px;font-family:var(--font-body);cursor:pointer">Отмена</button>
+      <button id="confirm-ok" style="flex:1;padding:13px;background:var(--red);border:none;border-radius:12px;color:#fff;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+/* ── Telegram WebApp init ── */
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  tg.setHeaderColor('#0a0a0a');
+  tg.setBackgroundColor('#0a0a0a');
+}
+
+/* ── Constants ── */
+const RNAMES = ['Пожрал говно','Слабо','Норм','Хорошо','Разъебал'];
+
+const SEED_SHOWS = [];
+const SEED_JOKES = [
+  'Дрочка',
+  'Бедный',
+  'Политическая',
+  'Сперма',
+  'Гитлер',
+];
+
+const SEED_VENUES = [
+  'Ari',
+  'ПЭУ',
+  'Stage',
+  'Синий Пушкин',
+  'Capone',
+  'Платка',
+];
+
+/* ── Storage ── */
+const CS = tg?.CloudStorage;
+let jokes = [], shows = [], venues = [];
+let storageReady = false;
+
+function lsGet(k, def) {
+  try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+async function loadData() {
+  // Всегда сначала грузим из localStorage — он надёжнее
+  jokes = lsGet('sdc_jokes', null);
+  shows = lsGet('sdc_shows', null);
+  venues = lsGet('sdc_venues', null);
+
+  // Если в localStorage пусто — пробуем CloudStorage
+  if ((!jokes || !shows || !venues) && CS) {
+    await new Promise(res => {
+      CS.getItems(['jokes','shows','venues'], (err, vals) => {
+        if (!err && vals) {
+          try { if (vals.jokes) jokes = JSON.parse(vals.jokes); } catch {}
+          try { if (vals.shows) shows = JSON.parse(vals.shows); } catch {}
+          try { if (vals.venues) venues = JSON.parse(vals.venues); } catch {}
+        }
+        res();
+      });
+    });
+  }
+
+  // Если всё ещё пусто — seed данные
+  if (!jokes || !jokes.length) jokes = SEED_JOKES.slice();
+  if (!shows) shows = SEED_SHOWS.slice();
+  if (!venues || !venues.length) venues = SEED_VENUES.slice();
+
+  storageReady = true;
+  applyTheme();
+  renderLog();
+}
+
+function persist() {
+  // Сохраняем в оба хранилища
+  lsSet('sdc_jokes', jokes);
+  lsSet('sdc_shows', shows);
+  lsSet('sdc_venues', venues);
+  if (CS) {
+    try {
+      CS.setItems({ jokes: JSON.stringify(jokes), shows: JSON.stringify(shows), venues: JSON.stringify(venues) });
+    } catch {}
+  }
+}
+
+/* ── Helpers ── */
+function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function barColor(a) { return a>=3.5?'#c8ff00':a>=2.5?'#ffaa00':'#ff4545'; }
+function scClass(a) { return a>=3.5?'sc-high':a>=2.5?'sc-mid':'sc-low'; }
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+/* ── Navigation ── */
+function go(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sc-'+name).classList.add('active');
+  document.querySelector(`[data-screen="${name}"]`).classList.add('active');
+  document.getElementById('content').scrollTop = 0;
+  if (name==='log') renderLog();
+  if (name==='stats') renderStats();
+  if (name==='jokes') renderJokesList();
+  if (name==='history') renderHistory();
+  if (name==='settings') renderVenues();
+  if (tg) tg.HapticFeedback?.selectionChanged();
+}
+
+function populateVenueSelects() {
+  const logSel = document.getElementById('l-venue');
+  const statSel = document.getElementById('st-filter');
+  const cur = logSel?.value;
+  if (logSel) logSel.innerHTML = venues.map(v=>`<option>${v}</option>`).join('');
+  if (cur && venues.includes(cur) && logSel) logSel.value = cur;
+  if (statSel) {
+    const curSt = statSel.value;
+    statSel.innerHTML = '<option value="">Все площадки</option>' + venues.map(v=>`<option>${v}</option>`).join('');
+    if (curSt) statSel.value = curSt;
+  }
+}
+
+/* ── LOG ── */
+let logRatings = {};
+let setJokes = []; // indices from jokes[] selected for this show
+
+function renderLog() {
+  logRatings = {};
+  populateVenueSelects();
+  calSelected = null;
+  const lbl = document.getElementById('date-btn-label');
+  const btn = document.getElementById('date-btn');
+  const today = new Date();
+  if (lbl) {
+    calSelected = today;
+    const iso = today.toISOString().split('T')[0];
+    document.getElementById('l-date').value = iso;
+    lbl.textContent = today.toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--text)';
+  }
+  const ng = document.getElementById('l-note-good');
+  if (ng) ng.value = '';
+  renderSetJokes();
+}
+
+function renderSetJokes() {
+  const el = document.getElementById('log-jokes');
+  const empty = document.getElementById('log-empty-set');
+  if (!setJokes.length) {
+    el.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  el.innerHTML = setJokes.map((ji, pos) => `
+    <div class="swipe-wrap" id="sw-${pos}" data-pos="${pos}">
+      <div class="swipe-bg">🗑</div>
+      <div class="swipe-item card card-sm log-joke" id="lj-${ji}" style="margin-bottom:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:500;color:var(--text);flex:1">${pos+1}. ${jokes[ji]}</div>
+          <div class="drag-handle" data-pos="${pos}" style="font-size:18px;color:var(--text3);cursor:grab;padding:2px 4px;touch-action:none">☰</div>
+        </div>
+        <div class="reactions" id="lr-${ji}">
+          ${RNAMES.map((r,ri) => `<button class="r-btn" onclick="logRate(${ji},${ri},this)">${r}</button>`).join('')}
+        </div>
+      </div>
+    </div>`).join('');
+  setJokes.forEach((ji, pos) => initSwipe(pos, ji));
+  initDragReorder();
+}
+
+function initSwipe(pos, ji) {
+  const wrap = document.getElementById('sw-'+pos);
+  const item = wrap?.querySelector('.swipe-item');
+  if (!item) return;
+  let startX = 0, startY = 0, dx = 0, dragging = false, locked = false;
+  item.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dx = 0; dragging = true; locked = false;
+  }, {passive:true});
+  item.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    const cx = e.touches[0].clientX;
+    const cy = e.touches[0].clientY;
+    if (!locked) {
+      if (Math.abs(cy - startY) > Math.abs(cx - startX)) { dragging = false; return; }
+      locked = true;
+    }
+    dx = Math.min(0, cx - startX);
+    item.style.transform = `translateX(${Math.max(-80, dx)}px)`;
+    item.style.transition = 'none';
+  }, {passive:true});
+  item.addEventListener('touchend', () => {
+    dragging = false;
+    item.style.transition = 'transform 0.2s';
+    if (dx < -50) {
+      item.style.transform = 'translateX(-80px)';
+      setTimeout(() => removeFromSet(pos), 300);
+      if (tg) tg.HapticFeedback?.impactOccurred('medium');
+    } else {
+      item.style.transform = 'translateX(0)';
+    }
+  });
+}
+
+function initDragReorder() {
+  const container = document.getElementById('log-jokes');
+  let dragPos = null, dragEl = null, placeholder = null, startY = 0, offsetY = 0;
+
+  document.querySelectorAll('.drag-handle').forEach(handle => {
+    handle.addEventListener('touchstart', e => {
+      e.stopPropagation();
+      dragPos = parseInt(handle.dataset.pos);
+      dragEl = document.getElementById('sw-'+dragPos);
+      if (!dragEl) return;
+
+      startY = e.touches[0].clientY;
+      const rect = dragEl.getBoundingClientRect();
+      offsetY = startY - rect.top;
+
+      placeholder = document.createElement('div');
+      placeholder.style.height = rect.height + 'px';
+      placeholder.style.marginBottom = '8px';
+      placeholder.style.background = 'var(--bg3)';
+      placeholder.style.borderRadius = 'var(--radius-sm)';
+      placeholder.style.border = '1px dashed var(--border)';
+      dragEl.parentNode.insertBefore(placeholder, dragEl);
+
+      dragEl.style.position = 'fixed';
+      dragEl.style.left = rect.left + 'px';
+      dragEl.style.width = rect.width + 'px';
+      dragEl.style.top = (startY - offsetY) + 'px';
+      dragEl.style.zIndex = '500';
+      dragEl.style.opacity = '0.9';
+      dragEl.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
+      dragEl.style.transition = 'none';
+
+      if (tg) tg.HapticFeedback?.impactOccurred('medium');
+    }, {passive:true});
+
+    handle.addEventListener('touchmove', e => {
+      if (!dragEl) return;
+      e.preventDefault();
+      const cy = e.touches[0].clientY;
+      dragEl.style.top = (cy - offsetY) + 'px';
+
+      const wraps = [...container.querySelectorAll('.swipe-wrap:not([style*="position: fixed"])')];
+      let target = null;
+      for (const w of wraps) {
+        const r = w.getBoundingClientRect();
+        if (cy < r.top + r.height / 2) { target = w; break; }
+      }
+      if (target && target !== placeholder) {
+        container.insertBefore(placeholder, target);
+      } else if (!target) {
+        container.appendChild(placeholder);
+      }
+    }, {passive:false});
+
+    handle.addEventListener('touchend', () => {
+      if (!dragEl) return;
+      dragEl.style.position = '';
+      dragEl.style.left = '';
+      dragEl.style.width = '';
+      dragEl.style.top = '';
+      dragEl.style.zIndex = '';
+      dragEl.style.opacity = '';
+      dragEl.style.boxShadow = '';
+
+      const wraps = [...container.querySelectorAll('.swipe-wrap')];
+      const newOrder = wraps.filter(w => w !== placeholder).map(w => parseInt(w.dataset.pos));
+      placeholder.parentNode?.removeChild(placeholder);
+      dragEl = null; placeholder = null;
+
+      if (newOrder.length === setJokes.length) {
+        setJokes = newOrder.map(i => setJokes[i]);
+        const newRatings = {};
+        setJokes.forEach((ji, pos) => { if (logRatings[ji] !== undefined) newRatings[ji] = logRatings[ji]; });
+        logRatings = newRatings;
+        renderSetJokes();
+        if (tg) tg.HapticFeedback?.notificationOccurred('success');
+      }
+    });
+  });
+}
+
+function removeFromSet(pos) {
+  delete logRatings[setJokes[pos]];
+  setJokes.splice(pos, 1);
+  renderSetJokes();
+}
+
+/* ── SET PICKER ── */
+let pickerSelected = new Set();
+
+function openSetPicker() {
+  pickerSelected = new Set(setJokes);
+  const el = document.getElementById('setpicker-list');
+  if (!jokes.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px">Сначала добавь шутки во вкладке 🃏</div>';
+  } else {
+    el.innerHTML = jokes.map((j,i) => `
+      <div class="setpicker-item" onclick="togglePicker(${i})">
+        <div class="setpicker-check${pickerSelected.has(i)?' on':''}" id="pc-${i}">${pickerSelected.has(i)?'✓':''}</div>
+        <div class="setpicker-name">${j}</div>
+      </div>`).join('');
+  }
+  document.getElementById('setpicker-overlay').classList.add('open');
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function togglePicker(i) {
+  const check = document.getElementById('pc-'+i);
+  if (pickerSelected.has(i)) {
+    pickerSelected.delete(i);
+    check.classList.remove('on');
+    check.textContent = '';
+  } else {
+    pickerSelected.add(i);
+    check.classList.add('on');
+    check.textContent = '✓';
+  }
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function closeSetPicker() {
+  document.getElementById('setpicker-overlay').classList.remove('open');
+}
+
+function confirmSetPicker() {
+  setJokes = [...pickerSelected].sort((a,b)=>a-b);
+  closeSetPicker();
+  renderSetJokes();
+  if (tg) tg.HapticFeedback?.notificationOccurred('success');
+}
+
+function logRate(ji, ri, btn) {
+  logRatings[ji] = ri;
+  document.getElementById('lr-'+ji).querySelectorAll('.r-btn').forEach((b,i) => {
+    b.className = 'r-btn' + (i===ri ? ' sel sel-'+ri : '');
+  });
+  document.getElementById('lj-'+ji).classList.add('rated');
+  if (tg) {
+    if (ri === 4) {
+      tg.HapticFeedback?.notificationOccurred('success');
+    } else {
+      tg.HapticFeedback?.impactOccurred('light');
+    }
+  }
+  const allRated = setJokes.every(j => logRatings[j] !== undefined);
+  const allMax = setJokes.every(j => logRatings[j] === 4);
+  if (allRated && allMax) launchConfetti();
+}
+
+function saveShow() {
+  if (!Object.keys(logRatings).length) { toast('Оцени хотя бы одну шутку'); return; }
+  const venue = document.getElementById('l-venue').value;
+  const aud = document.getElementById('l-aud').value;
+  const dateVal = document.getElementById('l-date').value;
+  let date;
+  if (dateVal) {
+    const d = new Date(dateVal);
+    date = d.toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'});
+  } else {
+    date = new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'});
+  }
+  const noteGood = document.getElementById('l-note-good').value.trim();
+  shows.push({ venue, aud, date, ratings:{...logRatings}, noteGood });
+  persist();
+  if (tg) tg.HapticFeedback?.notificationOccurred('success');
+  toast('✓ Выступление сохранено');
+  setTimeout(() => go('stats'), 700);
+}
+
+/* ── STATS ── */
+function renderStats() {
+  const vf = document.getElementById('st-filter')?.value || '';
+  const fs = vf ? shows.filter(s=>s.venue===vf) : shows;
+  const allSc = fs.flatMap(s=>Object.values(s.ratings));
+  const ga = avg(allSc);
+
+  const last5 = fs.slice(-3);
+  const last5Sc = last5.flatMap(s=>Object.values(s.ratings));
+  const last5Avg = last5Sc.length ? avg(last5Sc) : null;
+  const trend = last5Avg !== null && allSc.length > 0 ? last5Avg - ga : null;
+  const trendStr = trend === null ? '' : trend > 0.1 ? '↑' : trend < -0.1 ? '↓' : '→';
+  const trendColor = trend === null ? '' : trend > 0.1 ? 'color:var(--accent)' : trend < -0.1 ? 'color:var(--red)' : 'color:var(--text3)';
+
+  document.getElementById('st-metrics').innerHTML = `
+    <div class="metric"><div class="metric-val">${fs.length}</div><div class="metric-lbl">Шоу</div></div>
+    <div class="metric"><div class="metric-val">${allSc.length?ga.toFixed(1):'—'}</div><div class="metric-lbl">Все шоу</div></div>
+    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?last5Avg.toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">Посл. 3 шоу</div></div>`;
+
+  if (fs.length >= 3) {
+    const showAvgs = fs.map(s => {
+      const sc = Object.values(s.ratings);
+      return sc.length ? avg(sc) : null;
+    }).filter(v => v !== null);
+    const first3avg = avg(showAvgs.slice(0, 3));
+    const last3avg = avg(showAvgs.slice(-3));
+    const growthDiff = last3avg - first3avg;
+    const growthPct = first3avg > 0 ? Math.round((growthDiff / first3avg) * 100) : 0;
+    const trendBlock = document.getElementById('st-trend-block') || (() => {
+      const d = document.createElement('div');
+      d.id = 'st-trend-block';
+      document.getElementById('st-metrics').after(d);
+      return d;
+    })();
+    const icon = growthDiff > 0.1 ? '📈' : growthDiff < -0.1 ? '📉' : '➡️';
+    const msg = growthDiff > 0.1
+      ? `Средний балл вырос на ${Math.abs(growthPct)}% по сравнению с первыми 3 шоу. Ты растёшь!`
+      : growthDiff < -0.1
+      ? `Средний балл упал на ${Math.abs(growthPct)}% по сравнению с первыми 3 шоу. Время пересмотреть материал.`
+      : `Средний балл стабилен. Попробуй добавить новый материал.`;
+    trendBlock.innerHTML = `<div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:20px">${icon}</span>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5">${msg}</div>
+    </div>`;
+  }
+
+  const ranked = jokes.map((j,i)=>{
+    const sc = fs.filter(s=>s.ratings[i]!==undefined).map(s=>s.ratings[i]);
+    return {name:j,idx:i,a:sc.length?avg(sc):null,cnt:sc.length};
+  }).filter(x=>x.a!==null).sort((a,b)=>b.a-a.a);
+
+  const el = document.getElementById('st-list');
+  if (!ranked.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Нет данных для выбранной площадки</div></div>';
+    return;
+  }
+  el.innerHTML = ranked.map(r => {
+    const pct = Math.round((r.a/4)*100);
+    const badge = r.a>=3.5?'badge-hot':r.a>=2.5?'badge-ok':'badge-cold';
+    const bLabel = r.a>=3.5?'Хит':r.a>=2.5?'Средне':'Слабая';
+    return `<div class="joke-row" onclick="go('jokes');setTimeout(()=>openDetail(${r.idx}),300)">
+      <div class="joke-row-info">
+        <div class="joke-row-name">${r.name}</div>
+        <div style="margin-top:6px">
+          <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(r.a)}"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            <span style="font-size:11px;color:var(--text3)">${r.cnt} проверки</span>
+            <span style="font-size:12px;color:var(--text2)">${r.a.toFixed(1)} / 4</span>
+          </div>
+        </div>
+      </div>
+      <span class="badge ${badge}">${bLabel}</span>
+    </div>`;
+  }).join('');
+
+  const withNotes = fs.filter(s=>s.noteGood||s.noteBad).slice(-5).reverse();
+  const notesWrap = document.getElementById('st-notes-wrap');
+  const notesEl = document.getElementById('st-notes');
+  if (withNotes.length) {
+    notesWrap.style.display = 'block';
+    notesEl.innerHTML = withNotes.map(s=>`
+      <div class="card card-sm" style="margin-bottom:8px">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${s.date} · ${s.venue}</div>
+        <div style="font-size:13px;color:var(--text)">📝 ${s.noteGood}</div>
+      </div>`).join('');
+  } else {
+    notesWrap.style.display = 'none';
+  }
+}
+
+/* ── JOKES LIST ── */
+let jkFilter = '';
+
+function renderJokesList() {
+  document.getElementById('jk-list-view').style.display = 'block';
+  document.getElementById('jk-detail-view').style.display = 'none';
+
+  const venues = ['Все', ...new Set(shows.map(s=>s.venue))];
+  document.getElementById('jk-chips').innerHTML = venues.map(v =>
+    `<button class="chip${jkFilter===(v==='Все'?'':v)?' on':''}" onclick="setJkFilter('${v==='Все'?'':v}',this)">${v}</button>`
+  ).join('');
+
+  const search = document.getElementById('joke-search')?.value.trim().toLowerCase() || '';
+  const filtered = jokes.map((j,i) => ({j,i})).filter(({j}) => !search || j.toLowerCase().includes(search));
+
+  const el = document.getElementById('jk-cards');
+  if (!filtered.length) {
+    el.innerHTML = search
+      ? `<div class="empty"><div class="empty-text">Нет шуток по запросу «${search}»</div></div>`
+      : '<div class="empty"><div class="empty-text">Добавь шутки выше</div></div>';
+    return;
+  }
+  el.innerHTML = filtered.map(({j,i}) => {
+    const hist = getJokeShows(i, jkFilter);
+    const sc = hist.map(h=>h.score);
+    const a = sc.length ? avg(sc) : null;
+    const trend = sc.length>=2 ? sc[sc.length-1]-sc[0] : null;
+    const trendEl = trend===null?'':trend>0?`<span class="trend-up">↑</span>`:trend<0?`<span class="trend-dn">↓</span>`:`<span class="trend-eq">→</span>`;
+    return `<div class="joke-row" id="jrow-${i}">
+      <div class="joke-row-info">
+        <div class="joke-row-name" id="jname-${i}" style="cursor:pointer" onclick="openDetail(${i})">${j}</div>
+        ${a!==null?`<div style="margin-top:6px;cursor:pointer" onclick="openDetail(${i})">
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.round((a/4)*100)}%;background:${barColor(a)}"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px">
+            ${trendEl}<span style="font-size:11px;color:var(--text3)">${sc.length} пров.</span>
+            <span style="font-size:12px;color:var(--text2)">${a.toFixed(1)}/4</span>
+          </div>
+        </div>`:'<div class="joke-row-sub">Нет данных — нажми › чтобы открыть</div>'}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        <button onclick="startEdit(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Редактировать">✏️</button>
+        <button onclick="deleteJoke(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Удалить">🗑</button>
+        <span style="color:var(--text3);font-size:18px;cursor:pointer" onclick="openDetail(${i})">›</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setJkFilter(v, btn) {
+  jkFilter = v;
+  document.getElementById('jk-chips').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  renderJokesList();
+}
+
+function addJoke() {
+  const inp = document.getElementById('new-joke-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  jokes.push(val);
+  persist();
+  inp.value = '';
+  if (tg) tg.HapticFeedback?.impactOccurred('medium');
+  toast('Шутка добавлена');
+  renderJokesList();
+  renderLog();
+}
+
+function startEdit(i) {
+  const nameEl = document.getElementById('jname-'+i);
+  if (!nameEl) return;
+  nameEl.onclick = null;
+  nameEl.style.cursor = 'default';
+  const current = jokes[i];
+  nameEl.innerHTML = `<input id="edit-inp-${i}" value="${current.replace(/"/g,'&quot;')}"
+    style="background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)"
+    onkeydown="if(event.key==='Enter')saveEdit(${i});if(event.key==='Escape')renderJokesList()">
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button onclick="saveEdit(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">Сохранить</button>
+      <button onclick="renderJokesList()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Отмена</button>
+    </div>`;
+  setTimeout(() => {
+    const inp = document.getElementById('edit-inp-'+i);
+    if (inp) {
+      inp.focus();
+      inp.click();
+      inp.setSelectionRange(inp.value.length, inp.value.length);
+    }
+  }, 100);
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function saveEdit(i) {
   const val = document.getElementById('edit-inp-'+i)?.value.trim();
   if (!val) return;
   jokes[i] = val;
