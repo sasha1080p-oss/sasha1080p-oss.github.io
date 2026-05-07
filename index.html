@@ -163,8 +163,8 @@ select:focus, input:focus { border-color: var(--accent); }
 .sec-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
 
 /* Toast */
-#toast { position: fixed; bottom: 50%; left: 50%; transform: translateX(-50%) translateY(50%); background: var(--accent); color: #000; font-family: var(--font-head); font-size: 15px; font-weight: 700; padding: 14px 28px; border-radius: 24px; z-index: 999; opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; white-space: nowrap; }
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(50%) scale(1.05); }
+#toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8); background: var(--accent); color: #000; font-family: var(--font-head); font-size: 16px; font-weight: 700; padding: 16px 32px; border-radius: 24px; z-index: 99999; opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
 /* Log joke card accent line */
 .log-joke { border-left: 3px solid var(--bg3); transition: border-color 0.2s; }
@@ -545,32 +545,44 @@ function lsGet(k, def) {
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 
 async function loadData() {
-  if (CS) {
+  // Всегда сначала грузим из localStorage — он надёжнее
+  jokes = lsGet('sdc_jokes', null);
+  shows = lsGet('sdc_shows', null);
+  venues = lsGet('sdc_venues', null);
+
+  // Если в localStorage пусто — пробуем CloudStorage
+  if ((!jokes || !shows || !venues) && CS) {
     await new Promise(res => {
       CS.getItems(['jokes','shows','venues'], (err, vals) => {
-        jokes = vals?.jokes ? JSON.parse(vals.jokes) : SEED_JOKES.slice();
-        shows = vals?.shows ? JSON.parse(vals.shows) : SEED_SHOWS.slice();
-        venues = vals?.venues ? JSON.parse(vals.venues) : SEED_VENUES.slice();
+        if (!err && vals) {
+          try { if (vals.jokes) jokes = JSON.parse(vals.jokes); } catch {}
+          try { if (vals.shows) shows = JSON.parse(vals.shows); } catch {}
+          try { if (vals.venues) venues = JSON.parse(vals.venues); } catch {}
+        }
         res();
       });
     });
-  } else {
-    jokes = lsGet('sdc_jokes', SEED_JOKES.slice());
-    shows = lsGet('sdc_shows', SEED_SHOWS.slice());
-    venues = lsGet('sdc_venues', SEED_VENUES.slice());
   }
+
+  // Если всё ещё пусто — seed данные
+  if (!jokes || !jokes.length) jokes = SEED_JOKES.slice();
+  if (!shows) shows = SEED_SHOWS.slice();
+  if (!venues || !venues.length) venues = SEED_VENUES.slice();
+
   storageReady = true;
   applyTheme();
   renderLog();
 }
 
 function persist() {
+  // Сохраняем в оба хранилища
+  lsSet('sdc_jokes', jokes);
+  lsSet('sdc_shows', shows);
+  lsSet('sdc_venues', venues);
   if (CS) {
-    CS.setItems({ jokes: JSON.stringify(jokes), shows: JSON.stringify(shows), venues: JSON.stringify(venues) });
-  } else {
-    lsSet('sdc_jokes', jokes);
-    lsSet('sdc_shows', shows);
-    lsSet('sdc_venues', venues);
+    try {
+      CS.setItems({ jokes: JSON.stringify(jokes), shows: JSON.stringify(shows), venues: JSON.stringify(venues) });
+    } catch {}
   }
 }
 
