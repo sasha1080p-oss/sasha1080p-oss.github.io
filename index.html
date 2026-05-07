@@ -202,25 +202,72 @@ select:focus, input:focus { border-color: var(--accent); }
 .setpicker-check.on { background:var(--accent);border-color:var(--accent); }
 .setpicker-name { font-size:14px;color:var(--text); }
 
+/* Mono theme */
+body.theme-mono {
+  --bg: #111111;
+  --bg2: #1a1a1a;
+  --bg3: #222222;
+  --border: rgba(255,255,255,0.1);
+  --text: #ffffff;
+  --text2: #aaaaaa;
+  --text3: #555555;
+  --accent: #ffffff;
+  --accent-dim: rgba(255,255,255,0.08);
+  --red: #aaaaaa;
+  --amber: #888888;
+  --green: #cccccc;
+  --teal: #999999;
+  --r0: #ffffff; --r0b: rgba(255,255,255,0.08);
+  --r1: #cccccc; --r1b: rgba(204,204,204,0.08);
+  --r2: #888888; --r2b: rgba(136,136,136,0.08);
+  --r3: #cccccc; --r3b: rgba(204,204,204,0.08);
+  --r4: #ffffff; --r4b: rgba(255,255,255,0.12);
+}
+body.theme-mono #nav { background: rgba(17,17,17,0.95); }
+body.theme-mono { background: var(--bg); }
+body.theme-mono .btn-primary { color: #111; }
+body.theme-mono .cal-day.selected { color: #111; }
+body.theme-mono .bar-fill { background: #ffffff !important; }
+body.theme-mono .badge-hot,
+body.theme-mono .badge-ok,
+body.theme-mono .badge-cold { background: rgba(255,255,255,0.08); color: #ffffff; border: 0.5px solid rgba(255,255,255,0.2); }
+body.theme-mono .trend-up,
+body.theme-mono .trend-dn,
+body.theme-mono .trend-eq { color: #aaaaaa; }
+body.theme-mono .sc-high,
+body.theme-mono .sc-mid,
+body.theme-mono .sc-low { color: #ffffff; }
+body.theme-mono .insight { border-left-color: #ffffff; }
+body.theme-mono .r-btn.sel-0,
+body.theme-mono .r-btn.sel-1,
+body.theme-mono .r-btn.sel-2,
+body.theme-mono .r-btn.sel-3,
+body.theme-mono .r-btn.sel-4 { background: rgba(255,255,255,0.1); border-color: #ffffff; color: #ffffff; }
+body.theme-mono .pill-0,
+body.theme-mono .pill-1,
+body.theme-mono .pill-2,
+body.theme-mono .pill-3,
+body.theme-mono .pill-4 { background: rgba(255,255,255,0.08); color: #ffffff; }
+
 /* Pink theme */
 body.theme-pink {
-  --bg: #0d0008;
-  --bg2: #1a0012;
-  --bg3: #260018;
-  --border: rgba(255,110,180,0.15);
-  --text: #ffe0f0;
-  --text2: #cc88aa;
-  --text3: #884466;
-  --accent: #ff6eb4;
-  --accent-dim: rgba(255,110,180,0.12);
-  --red: #ff4545;
-  --r0: #ff4545; --r0b: rgba(255,69,69,0.15);
-  --r1: #ff8c00; --r1b: rgba(255,140,0,0.15);
-  --r2: #cc88aa; --r2b: rgba(204,136,170,0.15);
-  --r3: #ff6eb4; --r3b: rgba(255,110,180,0.15);
-  --r4: #ff99cc; --r4b: rgba(255,153,204,0.15);
+  --bg: #0f080d;
+  --bg2: #1c0f18;
+  --bg3: #271520;
+  --border: rgba(255,182,210,0.12);
+  --text: #ffe8f3;
+  --text2: #d4a0bb;
+  --text3: #9a6880;
+  --accent: #ffb6d2;
+  --accent-dim: rgba(255,182,210,0.1);
+  --red: #ff6b8a;
+  --r0: #ff6b8a; --r0b: rgba(255,107,138,0.15);
+  --r1: #ffaa70; --r1b: rgba(255,170,112,0.15);
+  --r2: #d4a0bb; --r2b: rgba(212,160,187,0.15);
+  --r3: #ffb6d2; --r3b: rgba(255,182,210,0.15);
+  --r4: #ffd6e8; --r4b: rgba(255,214,232,0.15);
 }
-body.theme-pink #nav { background: rgba(13,0,8,0.95); }
+body.theme-pink #nav { background: rgba(15,8,13,0.95); }
 body.theme-pink { background: var(--bg); }
 
 /* Calendar */
@@ -263,7 +310,7 @@ body.theme-pink { background: var(--bg); }
             <option>Меньше 10</option>
             <option>10–20</option>
             <option>20–50</option>
-            <option>&gt;50</option>
+            <option>50–200</option>
             <option>Олимпийский</option>
           </select>
         </div>
@@ -287,8 +334,7 @@ body.theme-pink { background: var(--bg); }
 
       <div style="margin-top:14px">
         <div class="sec-label">Заметки</div>
-        <textarea id="l-note-good" placeholder="Что удалось 👍" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:72px;margin-bottom:8px;line-height:1.5"></textarea>
-        <textarea id="l-note-bad" placeholder="Что не так 👎" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:72px;line-height:1.5"></textarea>
+        <textarea id="l-note-good" placeholder="Заметки о выступлении..." style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:100px;line-height:1.5"></textarea>
       </div>
 
       <button class="btn-primary" id="save-btn" onclick="saveShow()">Сохранить выступление</button>
@@ -322,6 +368,9 @@ body.theme-pink { background: var(--bg); }
         <div class="add-joke-row">
           <input type="text" id="new-joke-input" placeholder="Добавить шутку..." maxlength="80">
           <button onclick="addJoke()">+</button>
+        </div>
+        <div style="position:relative;margin-bottom:10px">
+          <input type="text" id="joke-search" placeholder="🔍 Поиск..." oninput="renderJokesList()" style="padding-left:14px">
         </div>
         <div class="chips" id="jk-chips"></div>
         <div class="card" style="padding:0;overflow:hidden" id="jk-cards"></div>
@@ -369,7 +418,7 @@ body.theme-pink { background: var(--bg); }
           </div>
           <div id="theme-pink" onclick="setTheme('pink')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid transparent;background:#1a0a12;cursor:pointer;text-align:center">
             <div style="font-size:20px;margin-bottom:4px">🩷</div>
-            <div style="font-size:12px;color:#ff6eb4;font-weight:500">Розовая</div>
+            <div style="font-size:12px;color:#ffb6d2;font-weight:500">Розовая</div>
           </div>
         </div>
       </div>
@@ -385,6 +434,11 @@ body.theme-pink { background: var(--bg); }
         <button onclick="resetAll()" style="width:100%;padding:12px;background:none;border:1px solid var(--red);border-radius:var(--radius-sm);color:var(--red);font-size:13px;font-family:var(--font-body);cursor:pointer">
           Сбросить все данные
         </button>
+      </div>
+
+      <div style="margin-top:32px;text-align:center;padding-bottom:8px">
+        <div style="font-size:12px;color:var(--text3)">Создатель</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text2);margin-top:4px">Саша Нижегородцев</div>
       </div>
     </div>
 
@@ -579,9 +633,7 @@ function renderLog() {
     btn.style.color = 'var(--text)';
   }
   const ng = document.getElementById('l-note-good');
-  const nb = document.getElementById('l-note-bad');
   if (ng) ng.value = '';
-  if (nb) nb.value = '';
   renderSetJokes();
 }
 
@@ -595,16 +647,20 @@ function renderSetJokes() {
   }
   empty.style.display = 'none';
   el.innerHTML = setJokes.map((ji, pos) => `
-    <div class="swipe-wrap" id="sw-${pos}">
+    <div class="swipe-wrap" id="sw-${pos}" data-pos="${pos}">
       <div class="swipe-bg">🗑</div>
       <div class="swipe-item card card-sm log-joke" id="lj-${ji}" style="margin-bottom:0">
-        <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px">${pos+1}. ${jokes[ji]}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:500;color:var(--text);flex:1">${pos+1}. ${jokes[ji]}</div>
+          <div class="drag-handle" data-pos="${pos}" style="font-size:18px;color:var(--text3);cursor:grab;padding:2px 4px;touch-action:none">☰</div>
+        </div>
         <div class="reactions" id="lr-${ji}">
           ${RNAMES.map((r,ri) => `<button class="r-btn" onclick="logRate(${ji},${ri},this)">${r}</button>`).join('')}
         </div>
       </div>
     </div>`).join('');
   setJokes.forEach((ji, pos) => initSwipe(pos, ji));
+  initDragReorder();
 }
 
 function initSwipe(pos, ji) {
@@ -639,6 +695,87 @@ function initSwipe(pos, ji) {
     } else {
       item.style.transform = 'translateX(0)';
     }
+  });
+}
+
+function initDragReorder() {
+  const container = document.getElementById('log-jokes');
+  let dragPos = null, dragEl = null, placeholder = null, startY = 0, offsetY = 0;
+
+  document.querySelectorAll('.drag-handle').forEach(handle => {
+    handle.addEventListener('touchstart', e => {
+      e.stopPropagation();
+      dragPos = parseInt(handle.dataset.pos);
+      dragEl = document.getElementById('sw-'+dragPos);
+      if (!dragEl) return;
+
+      startY = e.touches[0].clientY;
+      const rect = dragEl.getBoundingClientRect();
+      offsetY = startY - rect.top;
+
+      placeholder = document.createElement('div');
+      placeholder.style.height = rect.height + 'px';
+      placeholder.style.marginBottom = '8px';
+      placeholder.style.background = 'var(--bg3)';
+      placeholder.style.borderRadius = 'var(--radius-sm)';
+      placeholder.style.border = '1px dashed var(--border)';
+      dragEl.parentNode.insertBefore(placeholder, dragEl);
+
+      dragEl.style.position = 'fixed';
+      dragEl.style.left = rect.left + 'px';
+      dragEl.style.width = rect.width + 'px';
+      dragEl.style.top = (startY - offsetY) + 'px';
+      dragEl.style.zIndex = '500';
+      dragEl.style.opacity = '0.9';
+      dragEl.style.boxShadow = '0 8px 24px rgba(0,0,0,0.5)';
+      dragEl.style.transition = 'none';
+
+      if (tg) tg.HapticFeedback?.impactOccurred('medium');
+    }, {passive:true});
+
+    handle.addEventListener('touchmove', e => {
+      if (!dragEl) return;
+      e.preventDefault();
+      const cy = e.touches[0].clientY;
+      dragEl.style.top = (cy - offsetY) + 'px';
+
+      const wraps = [...container.querySelectorAll('.swipe-wrap:not([style*="position: fixed"])')];
+      let target = null;
+      for (const w of wraps) {
+        const r = w.getBoundingClientRect();
+        if (cy < r.top + r.height / 2) { target = w; break; }
+      }
+      if (target && target !== placeholder) {
+        container.insertBefore(placeholder, target);
+      } else if (!target) {
+        container.appendChild(placeholder);
+      }
+    }, {passive:false});
+
+    handle.addEventListener('touchend', () => {
+      if (!dragEl) return;
+      dragEl.style.position = '';
+      dragEl.style.left = '';
+      dragEl.style.width = '';
+      dragEl.style.top = '';
+      dragEl.style.zIndex = '';
+      dragEl.style.opacity = '';
+      dragEl.style.boxShadow = '';
+
+      const wraps = [...container.querySelectorAll('.swipe-wrap')];
+      const newOrder = wraps.filter(w => w !== placeholder).map(w => parseInt(w.dataset.pos));
+      placeholder.parentNode?.removeChild(placeholder);
+      dragEl = null; placeholder = null;
+
+      if (newOrder.length === setJokes.length) {
+        setJokes = newOrder.map(i => setJokes[i]);
+        const newRatings = {};
+        setJokes.forEach((ji, pos) => { if (logRatings[ji] !== undefined) newRatings[ji] = logRatings[ji]; });
+        logRatings = newRatings;
+        renderSetJokes();
+        if (tg) tg.HapticFeedback?.notificationOccurred('success');
+      }
+    });
   });
 }
 
@@ -705,6 +842,9 @@ function logRate(ji, ri, btn) {
       tg.HapticFeedback?.impactOccurred('light');
     }
   }
+  const allRated = setJokes.every(j => logRatings[j] !== undefined);
+  const allMax = setJokes.every(j => logRatings[j] === 4);
+  if (allRated && allMax) launchConfetti();
 }
 
 function saveShow() {
@@ -720,8 +860,7 @@ function saveShow() {
     date = new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'});
   }
   const noteGood = document.getElementById('l-note-good').value.trim();
-  const noteBad = document.getElementById('l-note-bad').value.trim();
-  shows.push({ venue, aud, date, ratings:{...logRatings}, noteGood, noteBad });
+  shows.push({ venue, aud, date, ratings:{...logRatings}, noteGood });
   persist();
   if (tg) tg.HapticFeedback?.notificationOccurred('success');
   toast('✓ Выступление сохранено');
@@ -735,7 +874,7 @@ function renderStats() {
   const allSc = fs.flatMap(s=>Object.values(s.ratings));
   const ga = avg(allSc);
 
-  const last5 = fs.slice(-5);
+  const last5 = fs.slice(-3);
   const last5Sc = last5.flatMap(s=>Object.values(s.ratings));
   const last5Avg = last5Sc.length ? avg(last5Sc) : null;
   const trend = last5Avg !== null && allSc.length > 0 ? last5Avg - ga : null;
@@ -745,7 +884,34 @@ function renderStats() {
   document.getElementById('st-metrics').innerHTML = `
     <div class="metric"><div class="metric-val">${fs.length}</div><div class="metric-lbl">Шоу</div></div>
     <div class="metric"><div class="metric-val">${allSc.length?ga.toFixed(1):'—'}</div><div class="metric-lbl">Все шоу</div></div>
-    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?last5Avg.toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">Посл. 5 шоу</div></div>`;
+    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?last5Avg.toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">Посл. 3 шоу</div></div>`;
+
+  if (fs.length >= 3) {
+    const showAvgs = fs.map(s => {
+      const sc = Object.values(s.ratings);
+      return sc.length ? avg(sc) : null;
+    }).filter(v => v !== null);
+    const first3avg = avg(showAvgs.slice(0, 3));
+    const last3avg = avg(showAvgs.slice(-3));
+    const growthDiff = last3avg - first3avg;
+    const growthPct = first3avg > 0 ? Math.round((growthDiff / first3avg) * 100) : 0;
+    const trendBlock = document.getElementById('st-trend-block') || (() => {
+      const d = document.createElement('div');
+      d.id = 'st-trend-block';
+      document.getElementById('st-metrics').after(d);
+      return d;
+    })();
+    const icon = growthDiff > 0.1 ? '📈' : growthDiff < -0.1 ? '📉' : '➡️';
+    const msg = growthDiff > 0.1
+      ? `Средний балл вырос на ${Math.abs(growthPct)}% по сравнению с первыми 3 шоу. Ты растёшь!`
+      : growthDiff < -0.1
+      ? `Средний балл упал на ${Math.abs(growthPct)}% по сравнению с первыми 3 шоу. Время пересмотреть материал.`
+      : `Средний балл стабилен. Попробуй добавить новый материал.`;
+    trendBlock.innerHTML = `<div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
+      <span style="font-size:20px">${icon}</span>
+      <div style="font-size:13px;color:var(--text2);line-height:1.5">${msg}</div>
+    </div>`;
+  }
 
   const ranked = jokes.map((j,i)=>{
     const sc = fs.filter(s=>s.ratings[i]!==undefined).map(s=>s.ratings[i]);
@@ -784,8 +950,7 @@ function renderStats() {
     notesEl.innerHTML = withNotes.map(s=>`
       <div class="card card-sm" style="margin-bottom:8px">
         <div style="font-size:12px;color:var(--text2);margin-bottom:6px">${s.date} · ${s.venue}</div>
-        ${s.noteGood?`<div style="font-size:13px;color:var(--accent);margin-bottom:4px">👍 ${s.noteGood}</div>`:''}
-        ${s.noteBad?`<div style="font-size:13px;color:var(--red)">👎 ${s.noteBad}</div>`:''}
+        <div style="font-size:13px;color:var(--text)">📝 ${s.noteGood}</div>
       </div>`).join('');
   } else {
     notesWrap.style.display = 'none';
@@ -804,18 +969,26 @@ function renderJokesList() {
     `<button class="chip${jkFilter===(v==='Все'?'':v)?' on':''}" onclick="setJkFilter('${v==='Все'?'':v}',this)">${v}</button>`
   ).join('');
 
+  const search = document.getElementById('joke-search')?.value.trim().toLowerCase() || '';
+  const filtered = jokes.map((j,i) => ({j,i})).filter(({j}) => !search || j.toLowerCase().includes(search));
+
   const el = document.getElementById('jk-cards');
-  if (!jokes.length) { el.innerHTML = '<div class="empty"><div class="empty-text">Добавь шутки выше</div></div>'; return; }
-  el.innerHTML = jokes.map((j,i) => {
+  if (!filtered.length) {
+    el.innerHTML = search
+      ? `<div class="empty"><div class="empty-text">Нет шуток по запросу «${search}»</div></div>`
+      : '<div class="empty"><div class="empty-text">Добавь шутки выше</div></div>';
+    return;
+  }
+  el.innerHTML = filtered.map(({j,i}) => {
     const hist = getJokeShows(i, jkFilter);
     const sc = hist.map(h=>h.score);
     const a = sc.length ? avg(sc) : null;
     const trend = sc.length>=2 ? sc[sc.length-1]-sc[0] : null;
     const trendEl = trend===null?'':trend>0?`<span class="trend-up">↑</span>`:trend<0?`<span class="trend-dn">↓</span>`:`<span class="trend-eq">→</span>`;
     return `<div class="joke-row" id="jrow-${i}">
-      <div class="joke-row-info" style="cursor:pointer" onclick="openDetail(${i})">
-        <div class="joke-row-name" id="jname-${i}">${j}</div>
-        ${a!==null?`<div style="margin-top:6px">
+      <div class="joke-row-info">
+        <div class="joke-row-name" id="jname-${i}" style="cursor:pointer" onclick="openDetail(${i})">${j}</div>
+        ${a!==null?`<div style="margin-top:6px;cursor:pointer" onclick="openDetail(${i})">
           <div class="bar-track"><div class="bar-fill" style="width:${Math.round((a/4)*100)}%;background:${barColor(a)}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px">
             ${trendEl}<span style="font-size:11px;color:var(--text3)">${sc.length} пров.</span>
@@ -824,8 +997,8 @@ function renderJokesList() {
         </div>`:'<div class="joke-row-sub">Нет данных — нажми › чтобы открыть</div>'}
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-        <button onclick="event.stopPropagation();startEdit(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Редактировать">✏️</button>
-        <button onclick="event.stopPropagation();deleteJoke(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Удалить">🗑</button>
+        <button onclick="startEdit(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Редактировать">✏️</button>
+        <button onclick="deleteJoke(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Удалить">🗑</button>
         <span style="color:var(--text3);font-size:18px;cursor:pointer" onclick="openDetail(${i})">›</span>
       </div>
     </div>`;
@@ -853,8 +1026,10 @@ function addJoke() {
 }
 
 function startEdit(i) {
-  const row = document.getElementById('jrow-'+i);
   const nameEl = document.getElementById('jname-'+i);
+  if (!nameEl) return;
+  nameEl.onclick = null;
+  nameEl.style.cursor = 'default';
   const current = jokes[i];
   nameEl.innerHTML = `<input id="edit-inp-${i}" value="${current.replace(/"/g,'&quot;')}"
     style="background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)"
@@ -993,7 +1168,7 @@ function buildInsights(ji, hist) {
   hist.forEach(h=>{ if(!byV[h.venue])byV[h.venue]=[]; byV[h.venue].push(h.score); });
   const va = Object.entries(byV).map(([v,sc])=>({v,a:avg(sc)})).sort((a,b)=>b.a-a.a);
   if (va.length>=2 && va[0].a-va[va.length-1].a>=1)
-    ins.push({t:`Лучше на «${va[0].v}»`,b:`Средний ${va[0].a.toFixed(1)} против ${va[va.length-1].a.toFixed(1)} на «${va[va.length-1].v}».`});
+    ins.push({t:`Лучше в «${va[0].v}»`,b:`Средний ${va[0].a.toFixed(1)} против ${va[va.length-1].a.toFixed(1)} в «${va[va.length-1].v}».`});
   const sc = hist.map(h=>h.score);
   const trend = sc[sc.length-1]-sc[0];
   if (sc.length>=3 && trend>=2) ins.push({t:'Шутка обкатывается',b:`За ${sc.length} проверки балл вырос с ${sc[0]} до ${sc[sc.length-1]}. Продолжай использовать.`});
@@ -1148,15 +1323,54 @@ function renderHistory() {
       <div class="show-info">
         <div class="show-venue">${s.venue}</div>
         <div class="show-meta">${s.date} · ${s.aud} · ${sc.length} шут.</div>
-        ${s.noteGood ? `<div style="font-size:11px;color:var(--accent);margin-top:3px">👍 ${s.noteGood}</div>` : ''}
-        ${s.noteBad ? `<div style="font-size:11px;color:var(--red);margin-top:2px">👎 ${s.noteBad}</div>` : ''}
+        ${s.noteGood ? `<div style="font-size:11px;color:var(--text2);margin-top:3px">📝 ${s.noteGood}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
         <span style="font-size:15px;font-weight:700;font-family:var(--font-head)" class="${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</span>
+        <button onclick="editShow(${s.origIdx})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)">✏️</button>
         <button onclick="deleteShow(${s.origIdx})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)">🗑</button>
       </div>
     </div>`;
   }).join('');
+}
+
+function editShow(i) {
+  const s = shows[i];
+  const el = document.getElementById('hist-list');
+  el.innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <div class="back-btn" onclick="renderHistory()" style="cursor:pointer">←</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${s.date} · ${s.venue}</div>
+      </div>
+      <div class="sec-label" style="margin-bottom:10px">Оценки шуток</div>
+      ${Object.keys(s.ratings).map(ji => `
+        <div class="card card-sm" style="margin-bottom:8px">
+          <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px">${jokes[ji] || 'Шутка #'+ji}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap" id="edit-r-${ji}">
+            ${RNAMES.map((r,ri) => `<button class="r-btn${s.ratings[ji]===ri?' sel sel-'+ri:''}" onclick="editRate(${i},${ji},${ri})">${r}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+      <div class="sec-label" style="margin-bottom:6px;margin-top:14px">Заметки</div>
+      <textarea id="edit-note" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:80px;line-height:1.5">${s.noteGood||''}</textarea>
+      <button onclick="saveEditShow(${i})" class="btn-primary" style="margin-top:12px">Сохранить</button>
+    </div>`;
+}
+
+function editRate(showIdx, ji, ri) {
+  shows[showIdx].ratings[ji] = ri;
+  document.getElementById('edit-r-'+ji).querySelectorAll('.r-btn').forEach((b,i) => {
+    b.className = 'r-btn' + (i===ri ? ' sel sel-'+ri : '');
+  });
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function saveEditShow(i) {
+  shows[i].noteGood = document.getElementById('edit-note').value.trim();
+  persist();
+  if (tg) tg.HapticFeedback?.notificationOccurred('success');
+  toast('Сохранено');
+  renderHistory();
 }
 
 function deleteShow(i) {
@@ -1244,19 +1458,67 @@ function renderCal() {
 /* ── THEME ── */
 function setTheme(t) {
   document.body.classList.toggle('theme-pink', t==='pink');
+  document.body.classList.remove('theme-mono');
   lsSet('sdc_theme', t);
   if (tg) {
-    tg.setHeaderColor(t==='pink'?'#0d0008':'#0a0a0a');
-    tg.setBackgroundColor(t==='pink'?'#0d0008':'#0a0a0a');
+    const bgColor = t==='pink'?'#0f080d':'#0a0a0a';
+    tg.setHeaderColor(bgColor);
+    tg.setBackgroundColor(bgColor);
   }
-  document.getElementById('theme-dark').style.borderColor = t==='dark'?'var(--accent)':'transparent';
-  document.getElementById('theme-pink').style.borderColor = t==='pink'?'#ff6eb4':'transparent';
+  document.getElementById('theme-dark').style.borderColor = t==='dark'?'#c8ff00':'transparent';
+  document.getElementById('theme-pink').style.borderColor = t==='pink'?'#ffb6d2':'transparent';
   if (tg) tg.HapticFeedback?.impactOccurred('light');
 }
 
 function applyTheme() {
   const t = lsGet('sdc_theme', 'dark');
   setTheme(t);
+}
+
+/* ── CONFETTI ── */
+function launchConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;pointer-events:none';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const COLORS = ['#c8ff00','#ff6eb4','#ffffff','#ffaa00','#00e676','#ff4545','#00bcd4'];
+  const pieces = Array.from({length: 120}, () => ({
+    x: Math.random() * canvas.width,
+    y: -20,
+    r: Math.random() * 6 + 3,
+    d: Math.random() * 80 + 20,
+    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    tilt: Math.random() * 10 - 10,
+    tiltAngle: 0,
+    tiltSpeed: Math.random() * 0.07 + 0.05,
+    speed: Math.random() * 4 + 2,
+  }));
+
+  if (tg) tg.HapticFeedback?.notificationOccurred('success');
+
+  let frame = 0;
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.tiltAngle += p.tiltSpeed;
+      p.y += p.speed;
+      p.x += Math.sin(p.tiltAngle) * 2;
+      p.tilt = Math.sin(p.tiltAngle) * 12;
+      ctx.beginPath();
+      ctx.lineWidth = p.r;
+      ctx.strokeStyle = p.color;
+      ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+      ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+      ctx.stroke();
+    });
+    frame++;
+    if (frame < 180) requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  draw();
 }
 
 /* ── Init ── */
