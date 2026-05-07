@@ -1453,10 +1453,15 @@ function shareShow(i) {
   });
 
   // Bottom watermark
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.fillRect(0, H-130, W, 1);
   ctx.fillStyle = text2;
-  ctx.font = '28px monospace';
+  ctx.font = '32px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('«зашло app· cоздатель: cаша нижегородцев»', W/2, H - 80);
+  ctx.fillText('«зашло app»', W/2, H - 72);
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '26px sans-serif';
+  ctx.fillText('создатель: Саша Нижегородцев', W/2, H - 34);
   ctx.textAlign = 'left';
 
   // Show image in overlay with share button
