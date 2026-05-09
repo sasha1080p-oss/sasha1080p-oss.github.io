@@ -533,7 +533,7 @@ body.theme-pink { background: var(--bg); }
     <div style="font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px" id="confirm-title"></div>
     <div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:20px" id="confirm-text"></div>
     <div style="display:flex;gap:10px">
-      <button onclick="hideConfirm()" style="flex:1;padding:13px;background:var(--bg3);border:none;border-radius:12px;color:var(--text2);font-size:14px;font-family:var(--font-body);cursor:pointer">Отмена</button>
+      <button onclick="hideConfirm()" style="flex:1;padding:13px;background:var(--bg3);border:none;border-radius:12px;color:var(--text2);font-size:14px;font-family:var(--font-body);cursor:pointer" id="confirm-cancel-btn">Отмена</button>
       <button id="confirm-ok" style="flex:1;padding:13px;background:var(--red);border:none;border-radius:12px;color:#fff;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer">Удалить</button>
     </div>
   </div>
@@ -1403,6 +1403,9 @@ function deleteVenueConfirmed(i) {
 function showConfirm(title, text, onOk) {
   document.getElementById('confirm-title').textContent = title;
   document.getElementById('confirm-text').textContent = text;
+  document.getElementById('confirm-cancel-btn').textContent = t('confirm_cancel');
+  document.getElementById('confirm-ok').textContent = t('confirm_delete');
+  document.getElementById('confirm-ok').style.background = 'var(--red)';
   document.getElementById('confirm-overlay').style.display = 'flex';
   document.getElementById('confirm-ok').onclick = () => {
     hideConfirm();
@@ -2027,11 +2030,20 @@ const I18N = {
 function t(key) { return I18N[lang][key] || I18N['ru'][key] || key; }
 
 function setLang(l) {
+  const prevLang = lang;
   lang = l;
   lsSet('sdc_lang', l);
   document.getElementById('lang-ru').style.borderColor = l==='ru' ? 'var(--accent)' : 'transparent';
   document.getElementById('lang-en').style.borderColor = l==='en' ? 'var(--accent)' : 'transparent';
   if (tg) tg.HapticFeedback?.impactOccurred('light');
+
+  // Reset venues and jokes to match new language
+  if (prevLang !== l) {
+    jokes = getSeedJokes();
+    venues = getSeedVenues();
+    persist();
+  }
+
   applyLang();
 }
 
