@@ -506,10 +506,9 @@ body.theme-pink { background: var(--bg); }
   <div id="setpicker-box">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
       <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)" id="setpicker-title">Выбери шутки</div>
-      <button onclick="closeSetPicker()" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;padding:0">✕</button>
     </div>
     <div id="setpicker-list" style="overflow-y:auto;flex:1"></div>
-    <button onclick="confirmSetPicker()" style="margin-top:14px;width:100%;padding:13px;background:var(--accent);border:none;border-radius:12px;color:#000;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer;flex-shrink:0">Готово</button>
+    <button onclick="confirmSetPicker()" id="setpicker-done-btn" style="margin-top:14px;width:100%;padding:13px;background:var(--accent);border:none;border-radius:12px;color:#000;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer;flex-shrink:0">Готово</button>
   </div>
 </div>
 
@@ -900,6 +899,7 @@ function openSetPicker() {
       </div>`).join('');
   }
   document.getElementById('setpicker-overlay').classList.add('open');
+  document.getElementById('setpicker-done-btn').textContent = t('picker_done');
   if (tg) tg.HapticFeedback?.impactOccurred('light');
 }
 
@@ -954,9 +954,9 @@ function saveShow() {
   let date;
   if (dateVal) {
     const d = new Date(dateVal);
-    date = d.toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'});
+    date = d.toLocaleDateString(lang==='en'?'en-GB':'ru-RU', {day:'numeric', month:'short', year:'numeric'});
   } else {
-    date = new Date().toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'});
+    date = new Date().toLocaleDateString(lang==='en'?'en-GB':'ru-RU', {day:'numeric', month:'short', year:'numeric'});
   }
   const noteGood = document.getElementById('l-note-good').value.trim();
   shows.push({ venue, aud, date, ratings:{...logRatings}, noteGood });
@@ -1202,12 +1202,12 @@ function _renderDetail() {
 
   document.getElementById('d-name').textContent = jokes[ji];
 
-  const trendText = trend===null?'—':trend>0?'↑ Растёт':trend<0?'↓ Падает':'→ Стабильно';
+  const trendText = trend===null?'—':trend>0?t('trend_up'):trend<0?t('trend_dn'):t('trend_eq');
   const trendColor = trend===null||trend===0?'var(--text3)':trend>0?'var(--accent)':'var(--red)';
   document.getElementById('d-metrics').innerHTML = `
-    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">Балл</div></div>
-    <div class="metric"><div class="metric-val">${filtH.length}</div><div class="metric-lbl">Проверки</div></div>
-    <div class="metric"><div class="metric-val" style="font-size:14px;color:${trendColor}">${trendText}</div><div class="metric-lbl">Тренд</div></div>`;
+    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">${t('detail_score')}</div></div>
+    <div class="metric"><div class="metric-val">${filtH.length}</div><div class="metric-lbl">${t('detail_checks')}</div></div>
+    <div class="metric"><div class="metric-val" style="font-size:14px;color:${trendColor}">${trendText}</div><div class="metric-lbl">${t('detail_trend')}</div></div>`;
 
   const allLbl = t('detail_all');
   const venues = [allLbl,...new Set(allH.map(h=>h.venue))];
@@ -1221,7 +1221,7 @@ function _renderDetail() {
         <div style="width:20px;text-align:center;font-size:11px;color:var(--text3);flex-shrink:0">${idx+1}</div>
         <div class="show-info">
           <div class="show-venue">${h.venue}</div>
-          <div class="show-meta">${h.date} · ${h.aud}</div>
+          <div class="show-meta">${h.date} · ${translateAud(h.aud)}</div>
         </div>
         <span class="pill pill-${h.score}">${getRnames()[h.score]}</span>
       </div>`).join('') :
@@ -1426,7 +1426,18 @@ function screenshotHint() {
   document.getElementById('confirm-ok').style.background = 'var(--accent)';
 }
 
-/* ── TIPS ── */
+function translateAud(aud) {
+  const map = {
+    'Меньше 10': {ru:'Меньше 10', en:'Under 10'},
+    'Under 10':  {ru:'Меньше 10', en:'Under 10'},
+    '10–20':     {ru:'10–20',     en:'10–20'},
+    '20–50':     {ru:'20–50',     en:'20–50'},
+    '50–200':    {ru:'50–200',    en:'50–200'},
+    'Олимпийский':       {ru:'Олимпийский',       en:'Madison Square Garden'},
+    'Madison Square Garden': {ru:'Олимпийский',   en:'Madison Square Garden'},
+  };
+  return map[aud]?.[lang] || aud;
+}
 const TIPS = [
   {
     ru: 'Записывай аудио/видео каждого выступления. Сложная часть: послушай это и расшифруй все, что ты хочешь сказать снова. Иногда это удручает, но заставляет тебя выполнять самую сложную часть — сидеть и писать. Обычно ты придумываешь, что добавить или изменить.',
@@ -1550,7 +1561,7 @@ function shareShow(i) {
   // App name
   ctx.fillStyle = accent;
   ctx.font = 'bold 36px monospace';
-  ctx.fillText('ЗАШЛО', 80, 100);
+  ctx.fillText('I KILLED IT.', 80, 100);
 
   // Venue & date
   ctx.fillStyle = textColor;
@@ -1558,7 +1569,7 @@ function shareShow(i) {
   ctx.fillText(s.venue, 80, 220);
   ctx.fillStyle = text2;
   ctx.font = '36px sans-serif';
-  ctx.fillText(s.date + ' · ' + s.aud, 80, 276);
+  ctx.fillText(s.date + ' · ' + translateAud(s.aud), 80, 276);
 
   // Score card
   const sc = Object.values(s.ratings);
@@ -1579,10 +1590,14 @@ function shareShow(i) {
   ctx.textAlign = 'left';
 
   // Mini metrics
+  const audMap = {
+    'Меньше 10': t('aud0'), '10–20': '10–20', '20–50': '20–50', '50–200': '50–200',
+    'Олимпийский': t('aud4'), 'Under 10': t('aud0'), 'Olympic': t('aud4'), 'Madison Square Garden': t('aud4'),
+  };
   const metrics = [
     {label: t('share_jokes'), val: sc.length},
     {label: t('share_bombed'), val: bombs},
-    {label: t('share_aud'), val: s.aud},
+    {label: t('share_aud'), val: translateAud(s.aud)},
   ];
   const mw = (W - 160 - 32) / 3;
   metrics.forEach((m, idx) => {
@@ -1644,7 +1659,7 @@ function shareShow(i) {
   ctx.fillStyle = text2;
   ctx.font = '32px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(lang==='en'?'"i killed it."':'«зашло app»', W/2, H - 72);
+  ctx.fillText('"I killed it."', W/2, H - 72);
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.font = '26px sans-serif';
   ctx.fillText(lang==='en'?'creator: Alex Nizhegorodtcev':'создатель: Саша Нижегородцев', W/2, H - 34);
@@ -1692,7 +1707,7 @@ function renderHistory() {
     return `<div class="show-row" style="cursor:pointer" onclick="viewShow(${s.origIdx})">
       <div class="show-info">
         <div class="show-venue">${s.venue}</div>
-        <div class="show-meta">${s.date} · ${s.aud} · ${sc.length} шут.</div>
+        <div class="show-meta">${s.date} · ${translateAud(s.aud)} · ${sc.length} ${t('hist_jokes_count')}</div>
         ${s.noteGood ? `<div style="font-size:11px;color:var(--text2);margin-top:3px">📝 ${s.noteGood}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
@@ -1716,7 +1731,7 @@ function viewShow(i) {
         <div class="back-btn" onclick="renderHistory()" style="cursor:pointer">←</div>
         <div>
           <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${s.venue}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">${s.date} · ${s.aud}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${s.date} · ${translateAud(s.aud)}</div>
         </div>
       </div>
 
@@ -1726,7 +1741,7 @@ function viewShow(i) {
         <div class="metric"><div class="metric-val">${sc.filter(v=>v===4).length}</div><div class="metric-lbl">${t('share_bombed')}</div></div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:8px">Шутки</div>
+      <div class="sec-label" style="margin-bottom:8px">${t('jokes_title')}</div>
       <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px">
         ${Object.keys(s.ratings).map((ji,idx) => {
           const score = s.ratings[ji];
@@ -1820,7 +1835,7 @@ function confirmDatePicker() {
   if (!calSelected) { toast('Выбери дату'); return; }
   const iso = calSelected.toISOString().split('T')[0];
   document.getElementById('l-date').value = iso;
-  const pretty = calSelected.toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+  const pretty = calSelected.toLocaleDateString(lang==='en'?'en-GB':'ru-RU', {day:'numeric', month:'long', year:'numeric'});
   const btn = document.getElementById('date-btn');
   const lbl = document.getElementById('date-btn-label');
   lbl.textContent = pretty;
