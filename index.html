@@ -401,6 +401,24 @@ body.theme-pink { background: var(--bg); }
       <div class="card" style="padding:0;overflow:hidden" id="hist-list"></div>
     </div>
 
+    <!-- TIPS SCREEN -->
+    <div id="sc-tips" class="screen">
+      <div class="page-header">
+        <div class="page-title">Советы</div>
+      </div>
+      <div id="tip-card" class="card" style="margin-bottom:14px">
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px" id="tip-num"></div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7;font-weight:400" id="tip-text"></div>
+      </div>
+      <button onclick="randomTip()" style="width:100%;padding:14px;background:var(--accent);border:none;border-radius:var(--radius);color:#000;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer;margin-bottom:20px">🎲 Случайный совет</button>
+
+      <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:14px 16px">
+        <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">#GulmanTip</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">1 января 2019 года американский комик Гэри Гулман, к тому моменту уже 25 лет в профессии, начал публиковать советы по написанию шуток в своём Twitter. Каждый день — один совет уровня мастер-класса по комедии и жизни. Изначально он писал для комиков, но постепенно его советы стали популярны и среди смежных специалистов — писателей, музыкантов и художников.<br><br>Советы выходили под хэштегом #GulmanTip и в большинстве своём призывали #ПишиСейчас. Гулман также затрагивал темы организации, лайфхаки для гастролей, советы по ментальному здоровью, и вопросы о том, стоит ли использовать ненормативную лексику — и когда.<br><br>На протяжении года другие комики добавляли свои советы, создавая живые беседы о ремесле, устройстве мышления и пути стендап комика.</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)">В приложении добавлено 13 советов из 366</div>
+      </div>
+    </div>
+
     <!-- SETTINGS SCREEN -->
     <div id="sc-settings" class="screen">
       <div class="page-header">
@@ -458,6 +476,10 @@ body.theme-pink { background: var(--bg); }
     <div class="nav-item" onclick="go('history')" data-screen="history">
       <div class="nav-icon">📋</div>
       <div class="nav-label">История</div>
+    </div>
+    <div class="nav-item" onclick="go('tips')" data-screen="tips">
+      <div class="nav-icon">💡</div>
+      <div class="nav-label">Советы</div>
     </div>
     <div class="nav-item" onclick="go('settings')" data-screen="settings">
       <div class="nav-icon">⚙️</div>
@@ -611,6 +633,7 @@ function go(name) {
   if (name==='stats') renderStats();
   if (name==='jokes') renderJokesList();
   if (name==='history') renderHistory();
+  if (name==='tips') { renderTip(Math.floor(Math.random() * TIPS.length)); }
   if (name==='settings') renderVenues();
   if (tg) tg.HapticFeedback?.selectionChanged();
 }
@@ -1329,6 +1352,53 @@ function screenshotHint() {
   );
   document.getElementById('confirm-ok').textContent = 'Понял';
   document.getElementById('confirm-ok').style.background = 'var(--accent)';
+}
+
+/* ── TIPS ── */
+const TIPS = [
+  'Записывай каждое выступление. Самое сложное — прослушать запись и расшифровать всё, что хочешь сказать снова. Это может быть трудно, но именно это заставляет тебя сделать самое трудное — сесть и писать. Обычно в процессе придумываешь, что добавить или изменить.',
+  'Перепиши любимую шутку слово в слово, по одному предложению. Закончив каждое — анализируй каждое слово. Почему это работает? Как слоги создают ритм? Как предложения ведут к панчлайну? Какова грамматика комедии?',
+  'Просмотри старый блокнот или файл. Скорее всего найдёшь предпосылку, фразу или предложение, о которых забыл. Перепиши перспективную идею с тем мастерством, которое приобрёл с тех пор.',
+  'Прокрастинируешь? Открой блокнот или ноутбук. Поставь таймер на любимое число от 15 до 19 минут. Пиши, пока таймер не сработает. Не проверяй телефон! Если захочется продолжить — продолжай.',
+  'Марк Твен говорил, перефразирую: «Разница между нужным словом и почти нужным — как разница между молнией и светлячком». Ты давно собирался это сделать. Пройдись по своим шуткам и добавь немного молнии сегодня.',
+  'Слова со звуками «б», «п» и «к» — особенно в начале или конце — звучат смешнее. Никто не знает почему. «Buick» смешнее, чем «Nissan». Замени мягкие слова-панчи на слова с этими звуками.',
+  'Найди друга-комика, позвони или встреться, разберите шутки, предпосылки, идеи. Играйте в «Это смешно?». Будь честным, но мягким — и не жди просто своей очереди! Скажи, если слышал похожее. Двое — идеально, больше — тоже ок.',
+  'Когда пробуешь новые шутки — будь готов. Начни с нескольких проверенных, чтобы оценить настрой зала. Убедись, что после новой шутки есть надёжная — на случай провала.\n\n«Провалить подготовку — значит подготовить провал». — Джон Вуден. «Проваливаться — нормально! Но не проваливайся из-за лени». — Я.\n\n99% комиков, которых я люблю, изучают заметки перед выходом на сцену. Это не случайность.',
+  'Каннибализируй свой номер. Просмотри весь запас шуток и перемести некоторые или их фрагменты. Добавь их к работающим шуткам — это придаст материалу плотность. Просто найди время нащупать связь.',
+  'Выходи на сцену! Записать шутку — это меньше 50% процесса. Тебе нужно выступать безумно много, прежде чем поймёшь, как писать для стендап-аудитории.\n\nЯ выходил, пока мой друг делал перерыв от пения. Аудитория не слушала ни слова. Я часто рассказывал одну шутку трижды — просто чтобы отработать ритм и научиться держать микрофон.',
+  'Плохое выступление? Иди домой и пиши. Отличное выступление? Иди домой и пиши. Тебя обидели? Иди домой и пиши. Мало что в шоу-бизнесе снимает ощущение беспомощности так, как занятие тем, над чем ты действительно властен.',
+  'Читай эссе Эмерсона «Доверие к себе» прямо сейчас! Уже читал? Читай снова. В нём золото. Это будет самый непопулярный совет, но на самом деле — самый ценный из всех.',
+  'beckett_special',
+];
+
+let currentTipIdx = 0;
+
+function renderTip(idx) {
+  document.getElementById('tip-num').textContent = `Совет ${idx + 1} из ${TIPS.length}`;
+  const tipEl = document.getElementById('tip-text');
+
+  // Special formatting for tip 13 (Beckett quote)
+  if (idx === 12) {
+    tipEl.innerHTML = `
+      <div style="font-size:15px;color:var(--text);line-height:1.7;margin-bottom:16px">«Пробовал. Терпел неудачу. Неважно. Попробуй снова. Потерпи неудачу снова. Терпи неудачу лучше.»<br><span style="color:var(--text2);font-size:13px">— Сэмюэл Беккет</span></div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.25);font-style:italic;line-height:1.6;margin-bottom:16px">"Ever tried. Ever failed. No matter. Try again. Fail again. Fail better."<br><span style="font-size:12px">— Samuel Beckett</span></div>
+      <div style="font-size:15px;color:var(--text);line-height:1.7">Это у меня висит в рамке у кровати. Воспринимаю как официальное разрешение на провал. Выйди на сцену сегодня и сделай то, чего боишься — то, что почти наверняка провалится. Если только это не важное выступление.</div>`;
+  } else {
+    tipEl.textContent = TIPS[idx];
+  }
+
+  currentTipIdx = idx;
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+function nextTip() {
+  renderTip((currentTipIdx + 1) % TIPS.length);
+}
+
+function randomTip() {
+  let idx;
+  do { idx = Math.floor(Math.random() * TIPS.length); } while (idx === currentTipIdx);
+  renderTip(idx);
 }
 
 /* ── SHARE ── */
