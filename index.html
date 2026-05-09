@@ -558,21 +558,22 @@ const RNAMES_EN = ['Sucked','Weak','Ok','Good','Destroyed'];
 function getRnames() { return lang==='en' ? RNAMES_EN : RNAMES_RU; }
 
 const SEED_SHOWS = [];
-const SEED_JOKES = [
-  'Jerking off',
-  'Poor',
-  'Political',
-  'Sperm',
-  'Hitler',
+const SEED_JOKES_RU = [
+  'Дрочка', 'Бедный', 'Политическая', 'Сперма', 'Гитлер',
 ];
-
-const SEED_VENUES = [
-  'Comedy Cellar',
-  'The Comedy Store',
-  'Laugh Factory',
-  "Caroline's on Broadway",
-  'Zanies Comedy Club',
+const SEED_JOKES_EN = [
+  'Jerking off', 'Poor', 'Political', 'Sperm', 'Hitler',
 ];
+const SEED_VENUES_RU = [
+  'Ari', 'ПЭУ', 'Stage', 'Синий Пушкин', 'Capone', 'Платка',
+];
+const SEED_VENUES_EN = [
+  'Comedy Cellar', 'The Comedy Store', 'Laugh Factory', "Caroline's on Broadway", 'Zanies Comedy Club',
+];
+function getSeedJokes() { return lang==='en' ? SEED_JOKES_EN.slice() : SEED_JOKES_RU.slice(); }
+function getSeedVenues() { return lang==='en' ? SEED_VENUES_EN.slice() : SEED_VENUES_RU.slice(); }
+const SEED_JOKES = SEED_JOKES_RU;
+const SEED_VENUES = SEED_VENUES_RU;
 
 /* ── Storage ── */
 const CS = tg?.CloudStorage;
@@ -605,9 +606,9 @@ async function loadData() {
   }
 
   // Если всё ещё пусто — seed данные
-  if (!jokes || !jokes.length) jokes = SEED_JOKES.slice();
+  if (!jokes || !jokes.length) jokes = getSeedJokes();
   if (!shows) shows = SEED_SHOWS.slice();
-  if (!venues || !venues.length) venues = SEED_VENUES.slice();
+  if (!venues || !venues.length) venues = getSeedVenues();
   lang = lsGet('sdc_lang', 'ru');
 
   storageReady = true;
@@ -1134,8 +1135,8 @@ function startEdit(i) {
     style="background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)"
     onkeydown="if(event.key==='Enter')saveEdit(${i});if(event.key==='Escape')renderJokesList()">
     <div style="display:flex;gap:6px;margin-top:6px">
-      <button onclick="saveEdit(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">Сохранить</button>
-      <button onclick="renderJokesList()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Отмена</button>
+      <button onclick="saveEdit(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">${t('btn_save')}</button>
+      <button onclick="renderJokesList()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">${t('btn_cancel')}</button>
     </div>`;
   setTimeout(() => {
     const inp = document.getElementById('edit-inp-'+i);
@@ -1325,8 +1326,8 @@ function startEditVenue(i) {
     style="background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)"
     onkeydown="if(event.key==='Enter')saveEditVenue(${i});if(event.key==='Escape')renderVenues()">
     <div style="display:flex;gap:6px;margin-top:6px">
-      <button onclick="saveEditVenue(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">Сохранить</button>
-      <button onclick="renderVenues()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">Отмена</button>
+      <button onclick="saveEditVenue(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">${t('btn_save')}</button>
+      <button onclick="renderVenues()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">${t('btn_cancel')}</button>
     </div>`;
   setTimeout(() => {
     const inp = document.getElementById('vedit-'+i);
@@ -1356,9 +1357,9 @@ function deleteVenue(i) {
 
 function resetAll() {
   showConfirm(t('settings_reset_title'), t('settings_reset_text'), () => {
-    jokes = SEED_JOKES.slice();
+    jokes = getSeedJokes();
     shows = SEED_SHOWS.slice();
-    venues = SEED_VENUES.slice();
+    venues = getSeedVenues();
     persist();
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
     toast(t('settings_reset_done'));
@@ -1486,7 +1487,6 @@ function renderTip(idx) {
     if (lang==='en') {
       tipEl.innerHTML = `
         <div style="font-size:15px;color:var(--text);line-height:1.7;margin-bottom:16px">"Ever tried. Ever failed. No matter. Try again. Fail again. Fail better."<br><span style="color:var(--text2);font-size:13px">— Samuel Beckett</span></div>
-        <div style="font-size:13px;color:rgba(255,255,255,0.25);font-style:italic;line-height:1.6;margin-bottom:16px">«Пробовал. Терпел неудачу. Неважно. Попробуй снова. Потерпи неудачу снова. Терпи неудачу лучше.»<br><span style="font-size:12px">— Сэмюэл Беккет</span></div>
         <div style="font-size:15px;color:var(--text);line-height:1.7">I have this framed on a wall next to the bed. I interpret it as endorsed permission to fail. Go on stage tonight and do something you're afraid to do, that you're almost certain will fail. (Unless it's an important show.)</div>`;
     } else {
       tipEl.innerHTML = `
@@ -1943,6 +1943,7 @@ const I18N = {
     settings_creator: 'Создатель', creator_name: 'Саша Нижегородцев',
     // Confirm modal
     confirm_cancel: 'Отмена', confirm_delete: 'Удалить',
+    btn_save: 'Сохранить', btn_cancel: 'Отмена',
     del_joke_title: 'Удалить шутку?', del_venue_title: 'Удалить площадку?',
     // Setpicker
     picker_title: 'Выбери шутки', picker_done: 'Готово',
@@ -2012,6 +2013,7 @@ const I18N = {
     settings_reset_done: 'Data reset',
     settings_creator: 'Creator', creator_name: 'Alex Nizhegorodtcev',
     confirm_cancel: 'Cancel', confirm_delete: 'Delete',
+    btn_save: 'Save', btn_cancel: 'Cancel',
     del_joke_title: 'Delete joke?', del_venue_title: 'Delete venue?',
     picker_title: 'Pick jokes', picker_done: 'Done',
     picker_empty: 'Add jokes in the 🃏 tab first',
