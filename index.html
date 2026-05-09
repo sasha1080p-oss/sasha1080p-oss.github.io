@@ -294,17 +294,17 @@ body.theme-pink { background: var(--bg); }
     <!-- LOG SCREEN -->
     <div id="sc-log" class="screen active">
       <div class="page-header">
-        <div class="page-title">Новое выступление</div>
-        <div class="page-sub">Оцени каждую шутку после шоу</div>
+        <div class="page-title" id="log-page-title">Новое выступление</div>
+        <div class="page-sub" id="log-page-sub">Оцени каждую шутку после шоу</div>
       </div>
 
       <div class="field-row" style="margin-bottom:12px">
         <div class="field">
-          <div class="field-label">Площадка</div>
+          <div class="field-label" id="log-venue-lbl">Площадка</div>
           <select id="l-venue"></select>
         </div>
         <div class="field">
-          <div class="field-label">Кол-во зрителей</div>
+          <div class="field-label" id="log-aud-lbl">Кол-во зрителей</div>
           <select id="l-aud">
             <option>Меньше 10</option>
             <option>10–20</option>
@@ -316,7 +316,7 @@ body.theme-pink { background: var(--bg); }
       </div>
 
       <div class="field" style="margin-bottom:12px">
-        <div class="field-label">Дата</div>
+        <div class="field-label" id="log-date-lbl">Дата</div>
         <button onclick="openDatePicker()" id="date-btn" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:14px;padding:11px 14px;border-radius:var(--radius-sm);text-align:left;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
           <span id="date-btn-label">Выбрать дату</span>
           <span style="color:var(--text3)">📅</span>
@@ -332,7 +332,7 @@ body.theme-pink { background: var(--bg); }
       <div id="log-empty-set" style="display:none;text-align:center;padding:20px;font-size:13px;color:var(--text3)">Нажми «+ Добавить» чтобы выбрать шутки</div>
 
       <div style="margin-top:14px">
-        <div class="sec-label">Заметки</div>
+        <div class="sec-label" id="log-notes-lbl">Заметки</div>
         <textarea id="l-note-good" placeholder="Заметки о выступлении..." style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:100px;line-height:1.5"></textarea>
       </div>
 
@@ -353,7 +353,7 @@ body.theme-pink { background: var(--bg); }
       </div>
       <div class="card" style="padding:0;overflow:hidden" id="st-list"></div>
       <div id="st-notes-wrap" style="margin-top:14px;display:none">
-        <div class="sec-label" style="margin-bottom:8px">Последние заметки</div>
+        <div class="sec-label" style="margin-bottom:8px" id="stats-notes-lbl">Последние заметки</div>
         <div id="st-notes"></div>
       </div>
     </div>
@@ -362,7 +362,7 @@ body.theme-pink { background: var(--bg); }
     <div id="sc-jokes" class="screen">
       <div id="jk-list-view">
         <div class="page-header">
-          <div class="page-title">Шутки</div>
+          <div class="page-title" id="jokes-page-title">Шутки</div>
         </div>
         <div class="add-joke-row">
           <input type="text" id="new-joke-input" placeholder="Добавить шутку..." maxlength="80">
@@ -383,12 +383,12 @@ body.theme-pink { background: var(--bg); }
         <div class="metrics" id="d-metrics"></div>
         <div class="chips" id="d-chips"></div>
         <div class="chart-box">
-          <div class="sec-label" style="margin-bottom:12px">Динамика</div>
+          <div class="sec-label" style="margin-bottom:12px" id="detail-dyn-lbl">Динамика</div>
           <canvas id="d-chart" height="100"></canvas>
         </div>
-        <div class="sec-label">История</div>
+        <div class="sec-label" id="detail-hist-lbl">История</div>
         <div class="card" style="padding:0;overflow:hidden;margin-bottom:14px" id="d-hist"></div>
-        <div class="sec-label">Инсайты</div>
+        <div class="sec-label" id="detail-ins-lbl">Инсайты</div>
         <div id="d-insights"></div>
       </div>
     </div>
@@ -422,12 +422,12 @@ body.theme-pink { background: var(--bg); }
     <!-- SETTINGS SCREEN -->
     <div id="sc-settings" class="screen">
       <div class="page-header">
-        <div class="page-title">Настройки</div>
-        <div class="page-sub">Твои площадки — используются в выступлениях</div>
+        <div class="page-title" id="settings-page-title">Настройки</div>
+        <div class="page-sub" id="settings-page-sub">Твои площадки — используются в выступлениях</div>
       </div>
 
       <div style="margin-bottom:20px">
-        <div class="sec-label" style="margin-bottom:10px" id="settings-theme-lbl">Тема</div>
+        <div class="sec-label" style="margin-bottom:10px" id="lbl-lang">Язык</div>
         <div style="display:flex;gap:10px">
           <div id="lang-ru" onclick="setLang('ru')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:var(--bg3);cursor:pointer;text-align:center">
             <div style="font-size:20px;margin-bottom:4px">🇷🇺</div>
@@ -1911,7 +1911,7 @@ const I18N = {
     // Detail
     detail_score: 'Балл', detail_checks: 'Проверки', detail_trend: 'Тренд',
     detail_all: 'Все', detail_history: 'История', detail_insights: 'Инсайты',
-    detail_no_data: 'Нет данных',
+    detail_dyn: 'Динамика', detail_no_data: 'Нет данных',
     insight_better: 'Лучше в', insight_vs: 'Средний', insight_vs2: 'против',
     insight_growing: 'Шутка обкатывается', insight_growing_b: 'балл вырос с',
     insight_growing_c: 'Продолжай использовать.',
@@ -1985,7 +1985,7 @@ const I18N = {
     jokes_added: 'Joke added', jokes_saved: 'Saved', jokes_deleted: 'Joke deleted',
     detail_score: 'Score', detail_checks: 'Times', detail_trend: 'Trend',
     detail_all: 'All', detail_history: 'History', detail_insights: 'Insights',
-    detail_no_data: 'No data',
+    detail_dyn: 'Dynamics', detail_no_data: 'No data',
     insight_better: 'Better at', insight_vs: 'Avg', insight_vs2: 'vs',
     insight_growing: 'Getting stronger', insight_growing_b: 'score went from',
     insight_growing_c: 'Keep using it.',
@@ -2100,12 +2100,54 @@ function applyLang() {
   // Update setpicker done button
   const pickerDone = document.querySelector('#setpicker-overlay button:last-child');
   if (pickerDone) pickerDone.textContent = t('picker_done');
-  // Stats labels
-  const statsTitle = document.getElementById('stats-page-title');
-  if (statsTitle) statsTitle.textContent = t('stats_title');
-  const statsRanking = document.getElementById('stats-ranking-lbl');
-  if (statsRanking) statsRanking.textContent = t('stats_ranking');
-  // History and jokes titles
+  // Log screen labels
+  const logTitle = document.getElementById('log-page-title');
+  if (logTitle) logTitle.textContent = t('log_title');
+  const logSub = document.getElementById('log-page-sub');
+  if (logSub) logSub.textContent = t('log_sub');
+  const logVenueLbl = document.getElementById('log-venue-lbl');
+  if (logVenueLbl) logVenueLbl.textContent = t('log_venue');
+  const logAudLbl = document.getElementById('log-aud-lbl');
+  if (logAudLbl) logAudLbl.textContent = t('log_aud');
+  const logDateLbl = document.getElementById('log-date-lbl');
+  if (logDateLbl) logDateLbl.textContent = t('log_date');
+  const logNotesLbl = document.getElementById('log-notes-lbl');
+  if (logNotesLbl) logNotesLbl.textContent = t('log_notes');
+  const saveBtn = document.getElementById('save-btn');
+  if (saveBtn) saveBtn.textContent = t('log_save');
+  const notePh = document.getElementById('l-note-good');
+  if (notePh) notePh.placeholder = t('log_notes_ph');
+  // Stats notes label
+  const statsNotesLbl = document.getElementById('stats-notes-lbl');
+  if (statsNotesLbl) statsNotesLbl.textContent = t('stats_notes_lbl');
+  // Jokes page title
+  const jokesPgTitle = document.getElementById('jokes-page-title');
+  if (jokesPgTitle) jokesPgTitle.textContent = t('jokes_title');
+  // Detail labels
+  const detailDyn = document.getElementById('detail-dyn-lbl');
+  if (detailDyn) detailDyn.textContent = t('detail_dyn');
+  const detailHist = document.getElementById('detail-hist-lbl');
+  if (detailHist) detailHist.textContent = t('detail_history');
+  const detailIns = document.getElementById('detail-ins-lbl');
+  if (detailIns) detailIns.textContent = t('detail_insights');
+  // Settings page title/sub
+  const settingsPgTitle = document.getElementById('settings-page-title');
+  if (settingsPgTitle) settingsPgTitle.textContent = t('settings_title');
+  const settingsPgSub = document.getElementById('settings-page-sub');
+  if (settingsPgSub) settingsPgSub.textContent = t('settings_sub');
+  // Stats filter
+  const stFilter = document.getElementById('st-filter');
+  if (stFilter) {
+    const cur = stFilter.value;
+    stFilter.innerHTML = `<option value="">${t('stats_filter_all')}</option>` + venues.map(v=>`<option>${v}</option>`).join('');
+    if (cur) stFilter.value = cur;
+  }
+  // Stats and ranking labels
+  const statsTitle2 = document.getElementById('stats-page-title');
+  if (statsTitle2) statsTitle2.textContent = t('stats_title');
+  const statsRanking2 = document.getElementById('stats-ranking-lbl');
+  if (statsRanking2) statsRanking2.textContent = t('stats_ranking');
+  // Theme and reset section labels
   const histTitle = document.getElementById('hist-page-title');
   if (histTitle) histTitle.textContent = t('hist_title');
   const jokesTitle = document.querySelector('#sc-jokes .page-title');
