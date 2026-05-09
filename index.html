@@ -1002,10 +1002,10 @@ function renderStats() {
     })();
     const icon = growthDiff > 0.1 ? '📈' : growthDiff < -0.1 ? '📉' : '➡️';
     const msg = growthDiff > 0.1
-      ? `Средний балл вырос на ${Math.abs(growthPct)}% по сравнению с первыми 3 шоу. Ты растёшь!`
+      ? `${t('trend_growing')} ${Math.abs(growthPct)}% ${t('trend_vs')}`
       : growthDiff < -0.1
-      ? `Средний балл упал на ${Math.abs(growthPct)}% по сравнению с первыми 3 шоу. Время пересмотреть материал.`
-      : `Средний балл стабилен. Попробуй добавить новый материал.`;
+      ? `${t('trend_falling')} ${Math.abs(growthPct)}% ${t('trend_vs2')}`
+      : t('trend_stable');
     trendBlock.innerHTML = `<div style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start">
       <span style="font-size:20px">${icon}</span>
       <div style="font-size:13px;color:var(--text2);line-height:1.5">${msg}</div>
@@ -1575,14 +1575,14 @@ function shareShow(i) {
   ctx.fillText(a.toFixed(1), W/2, 490);
   ctx.fillStyle = text2;
   ctx.font = '32px sans-serif';
-  ctx.fillText('средний балл', W/2, 530);
+  ctx.fillText(t('share_avg'), W/2, 530);
   ctx.textAlign = 'left';
 
   // Mini metrics
   const metrics = [
-    {label: 'Шуток', val: sc.length},
-    {label: 'Разъебал', val: bombs},
-    {label: 'Зрителей', val: s.aud},
+    {label: t('share_jokes'), val: sc.length},
+    {label: t('share_bombed'), val: bombs},
+    {label: t('share_aud'), val: s.aud},
   ];
   const mw = (W - 160 - 32) / 3;
   metrics.forEach((m, idx) => {
@@ -1606,7 +1606,7 @@ function shareShow(i) {
   const EMOJI = ['💀','😐','😏','😄','🔥'];
   ctx.fillStyle = text2;
   ctx.font = '30px sans-serif';
-  ctx.fillText('ШУТКИ', 80, 800);
+  ctx.fillText(lang==='en'?'JOKES':'ШУТКИ', 80, 800);
 
   jokeKeys.forEach((ji, idx) => {
     if (idx > 7) return;
@@ -1644,10 +1644,10 @@ function shareShow(i) {
   ctx.fillStyle = text2;
   ctx.font = '32px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('«зашло app»', W/2, H - 72);
+  ctx.fillText(lang==='en'?'"i killed it."':'«зашло app»', W/2, H - 72);
   ctx.fillStyle = 'rgba(255,255,255,0.3)';
   ctx.font = '26px sans-serif';
-  ctx.fillText('создатель: Саша Нижегородцев', W/2, H - 34);
+  ctx.fillText(lang==='en'?'creator: Alex Nizhegorodtcev':'создатель: Саша Нижегородцев', W/2, H - 34);
   ctx.textAlign = 'left';
 
   // Show image in overlay with share button
@@ -1721,9 +1721,9 @@ function viewShow(i) {
       </div>
 
       <div class="metrics" style="margin-bottom:14px">
-        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">Средний</div></div>
-        <div class="metric"><div class="metric-val">${sc.length}</div><div class="metric-lbl">Шуток</div></div>
-        <div class="metric"><div class="metric-val">${sc.filter(v=>v===4).length}</div><div class="metric-lbl">Разъебал</div></div>
+        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">${t('hist_score')}</div></div>
+        <div class="metric"><div class="metric-val">${sc.length}</div><div class="metric-lbl">${t('share_jokes')}</div></div>
+        <div class="metric"><div class="metric-val">${sc.filter(v=>v===4).length}</div><div class="metric-lbl">${t('share_bombed')}</div></div>
       </div>
 
       <div class="sec-label" style="margin-bottom:8px">Шутки</div>
@@ -1740,12 +1740,12 @@ function viewShow(i) {
         }).join('')}
       </div>
 
-      ${s.noteGood ? `<div class="sec-label" style="margin-bottom:6px">Заметки</div>
+      ${s.noteGood ? `<div class="sec-label" style="margin-bottom:6px">${t('log_notes')}</div>
       <div class="card card-sm" style="font-size:13px;color:var(--text2);line-height:1.5">📝 ${s.noteGood}</div>` : ''}
 
       <div style="display:flex;gap:10px;margin-top:14px">
-        <button onclick="shareShow(${i})" style="flex:1;padding:12px;background:var(--accent);border:none;color:#000;border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-head);font-weight:700;cursor:pointer">📸 Поделиться</button>
-        <button onclick="editShow(${i})" style="flex:1;padding:12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-body);cursor:pointer">✏️ Редактировать</button>
+        <button onclick="shareShow(${i})" style="flex:1;padding:12px;background:var(--accent);border:none;color:#000;border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-head);font-weight:700;cursor:pointer">${t('hist_share')}</button>
+        <button onclick="editShow(${i})" style="flex:1;padding:12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:var(--radius-sm);font-size:13px;font-family:var(--font-body);cursor:pointer">${t('hist_edit')}</button>
       </div>
     </div>`;
 }
@@ -1759,7 +1759,7 @@ function editShow(i) {
         <div class="back-btn" onclick="viewShow(${i})" style="cursor:pointer">←</div>
         <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${s.date} · ${s.venue}</div>
       </div>
-      <div class="sec-label" style="margin-bottom:10px">Оценки шуток</div>
+      <div class="sec-label" style="margin-bottom:10px">${t('hist_edit_ratings')}</div>
       ${Object.keys(s.ratings).map(ji => `
         <div class="card card-sm" style="margin-bottom:8px">
           <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px">${jokes[ji] || 'Шутка #'+ji}</div>
@@ -1767,9 +1767,9 @@ function editShow(i) {
             ${getRnames().map((r,ri) => `<button class="r-btn${s.ratings[ji]===ri?' sel sel-'+ri:''}" onclick="editRate(${i},${ji},${ri})">${r}</button>`).join('')}
           </div>
         </div>`).join('')}
-      <div class="sec-label" style="margin-bottom:6px;margin-top:14px">Заметки</div>
+      <div class="sec-label" style="margin-bottom:6px;margin-top:14px">${t('log_notes')}</div>
       <textarea id="edit-note" style="width:100%;background:var(--bg3);border:0.5px solid var(--border);color:var(--text);font-family:var(--font-body);font-size:13px;padding:11px 14px;border-radius:var(--radius-sm);outline:none;resize:none;height:80px;line-height:1.5">${s.noteGood||''}</textarea>
-      <button onclick="saveEditShow(${i})" class="btn-primary" style="margin-top:12px">Сохранить</button>
+      <button onclick="saveEditShow(${i})" class="btn-primary" style="margin-top:12px">${t('hist_save')}</button>
     </div>`;
 }
 
@@ -1952,7 +1952,7 @@ const I18N = {
     picker_title: 'Выбери шутки', picker_done: 'Готово',
     picker_empty: 'Сначала добавь шутки во вкладке 🃏',
     // Share
-    share_avg: 'средний балл', share_jokes: 'Шуток', share_bombed: 'Разъебал',
+    share_avg: 'средний балл', share_jokes: 'Шуток', share_bombed: 'Разъебал', share_aud: 'Зрителей',
     share_screenshot: 'Сделай скриншот чтобы сохранить', share_close: 'Закрыть',
     // Calendar
     cal_cancel: 'Отмена', cal_ok: 'OK',
@@ -1979,8 +1979,7 @@ const I18N = {
     trend_up: '↑ Growing', trend_dn: '↓ Dropping', trend_eq: '→ Stable',
     trend_growing: 'Average score up', trend_vs: 'vs first 3 shows. You\'re improving!',
     trend_falling: 'Average score down', trend_vs2: 'vs first 3 shows. Time to rethink the material.',
-    trend_stable: 'Score is stable. Try adding new material.',
-    jokes_title: 'Jokes', jokes_add_ph: 'Add a joke...', jokes_search_ph: '🔍 Search...',
+    trend_stable: 'Score is stable. Try adding new material.',    jokes_title: 'Jokes', jokes_add_ph: 'Add a joke...', jokes_search_ph: '🔍 Search...',
     jokes_empty: 'Add jokes above', jokes_no_data: 'No data — tap › to open',
     jokes_added: 'Joke added', jokes_saved: 'Saved', jokes_deleted: 'Joke deleted',
     detail_score: 'Score', detail_checks: 'Times', detail_trend: 'Trend',
@@ -2020,7 +2019,7 @@ const I18N = {
     del_joke_title: 'Delete joke?', del_venue_title: 'Delete venue?',
     picker_title: 'Pick jokes', picker_done: 'Done',
     picker_empty: 'Add jokes in the 🃏 tab first',
-    share_avg: 'avg score', share_jokes: 'Jokes', share_bombed: 'Destroyed',
+    share_avg: 'avg score', share_jokes: 'Jokes', share_bombed: 'Destroyed', share_aud: 'Audience',
     share_screenshot: 'Screenshot to save', share_close: 'Close',
     cal_cancel: 'Cancel', cal_ok: 'OK',
     aud0: 'Under 10', aud1: '10–20', aud2: '20–50', aud3: '50–200', aud4: 'Madison Square Garden',
