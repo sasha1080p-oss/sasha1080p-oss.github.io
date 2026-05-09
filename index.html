@@ -325,8 +325,8 @@ body.theme-pink { background: var(--bg); }
       </div>
 
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div class="sec-label" style="margin:0">Сет-лист на сегодня</div>
-        <button onclick="openSetPicker()" style="background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:20px;padding:5px 12px;font-size:12px;font-family:var(--font-body);cursor:pointer">+ Добавить</button>
+        <div class="sec-label" style="margin:0" id="setlist-lbl">Сет-лист на сегодня</div>
+        <button onclick="openSetPicker()" id="add-jokes-btn" style="background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:20px;padding:5px 12px;font-size:12px;font-family:var(--font-body);cursor:pointer">+ Добавить</button>
       </div>
       <div id="log-jokes"></div>
       <div id="log-empty-set" style="display:none;text-align:center;padding:20px;font-size:13px;color:var(--text3)">Нажми «+ Добавить» чтобы выбрать шутки</div>
@@ -342,11 +342,11 @@ body.theme-pink { background: var(--bg); }
     <!-- STATS SCREEN -->
     <div id="sc-stats" class="screen">
       <div class="page-header">
-        <div class="page-title">Аналитика</div>
+        <div class="page-title" id="stats-page-title">Аналитика</div>
       </div>
       <div class="metrics" id="st-metrics"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div class="sec-label" style="margin:0">Рейтинг шуток</div>
+        <div class="sec-label" style="margin:0" id="stats-ranking-lbl">Рейтинг шуток</div>
         <select id="st-filter" style="width:auto;font-size:11px;padding:6px 10px" onchange="renderStats()">
           <option value="">Все площадки</option>
         </select>
@@ -396,7 +396,7 @@ body.theme-pink { background: var(--bg); }
     <!-- HISTORY SCREEN -->
     <div id="sc-history" class="screen">
       <div class="page-header">
-        <div class="page-title">История</div>
+        <div class="page-title" id="hist-page-title">История</div>
       </div>
       <div class="card" style="padding:0;overflow:hidden" id="hist-list"></div>
     </div>
@@ -404,7 +404,7 @@ body.theme-pink { background: var(--bg); }
     <!-- TIPS SCREEN -->
     <div id="sc-tips" class="screen">
       <div class="page-header">
-        <div class="page-title">Советы</div>
+        <div class="page-title" id="tips-page-title">Советы</div>
       </div>
       <div id="tip-card" class="card" style="margin-bottom:14px">
         <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px" id="tip-num"></div>
@@ -414,8 +414,8 @@ body.theme-pink { background: var(--bg); }
 
       <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:14px 16px">
         <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">#GulmanTip</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.6">1 января 2019 года американский комик Гэри Гулман, к тому моменту уже 25 лет в профессии, начал публиковать советы по написанию шуток в своём Twitter. Каждый день — один совет уровня мастер-класса по комедии и жизни. Изначально он писал для комиков, но постепенно его советы стали популярны и среди смежных специалистов — писателей, музыкантов и художников.<br><br>Советы выходили под хэштегом #GulmanTip и в большинстве своём призывали #ПишиСейчас. Гулман также затрагивал темы организации, лайфхаки для гастролей, советы по ментальному здоровью, и вопросы о том, стоит ли использовать ненормативную лексику — и когда.<br><br>На протяжении года другие комики добавляли свои советы, создавая живые беседы о ремесле, устройстве мышления и пути стендап комика.</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)">В приложении добавлено 13 советов из 366</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6" id="gulman-bio">1 января 2019 года американский комик Гэри Гулман, к тому моменту уже 25 лет в профессии, начал публиковать советы по написанию шуток в своём Twitter. Каждый день — один совет уровня мастер-класса по комедии и жизни. Изначально он писал для комиков, но постепенно его советы стали популярны и среди смежных специалистов — писателей, музыкантов и художников.<br><br>Советы выходили под хэштегом #GulmanTip и в большинстве своём призывали #ПишиСейчас. Гулман также затрагивал темы организации, лайфхаки для гастролей, советы по ментальному здоровью, и вопросы о том, стоит ли использовать ненормативную лексику — и когда.<br><br>На протяжении года другие комики добавляли свои советы, создавая живые беседы о ремесле, устройстве мышления и пути стендап комика.</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)" id="tips-count-lbl">В приложении добавлено 13 советов из 366</div>
       </div>
     </div>
 
@@ -427,15 +427,29 @@ body.theme-pink { background: var(--bg); }
       </div>
 
       <div style="margin-bottom:20px">
-        <div class="sec-label" style="margin-bottom:10px">Тема</div>
+        <div class="sec-label" style="margin-bottom:10px" id="settings-theme-lbl">Тема</div>
+        <div style="display:flex;gap:10px">
+          <div id="lang-ru" onclick="setLang('ru')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:var(--bg3);cursor:pointer;text-align:center">
+            <div style="font-size:20px;margin-bottom:4px">🇷🇺</div>
+            <div style="font-size:12px;color:var(--text);font-weight:500">Русский</div>
+          </div>
+          <div id="lang-en" onclick="setLang('en')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid transparent;background:var(--bg3);cursor:pointer;text-align:center">
+            <div style="font-size:20px;margin-bottom:4px">🇺🇸</div>
+            <div style="font-size:12px;color:var(--text);font-weight:500">English</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div class="sec-label" style="margin-bottom:10px" id="settings-theme-lbl">Тема</div>
         <div style="display:flex;gap:10px">
           <div id="theme-dark" onclick="setTheme('dark')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid var(--accent);background:#0a0a0a;cursor:pointer;text-align:center">
             <div style="font-size:20px;margin-bottom:4px">🖤</div>
-            <div style="font-size:12px;color:#c8ff00;font-weight:500">Тёмная</div>
+            <div style="font-size:12px;color:#c8ff00;font-weight:500" id="theme-dark-lbl">Тёмная</div>
           </div>
           <div id="theme-pink" onclick="setTheme('pink')" style="flex:1;padding:14px;border-radius:var(--radius-sm);border:2px solid transparent;background:#1a0a12;cursor:pointer;text-align:center">
             <div style="font-size:20px;margin-bottom:4px">🩷</div>
-            <div style="font-size:12px;color:#ffb6d2;font-weight:500">Розовая</div>
+            <div style="font-size:12px;color:#ffb6d2;font-weight:500" id="theme-pink-lbl">Розовая</div>
           </div>
         </div>
       </div>
@@ -447,15 +461,15 @@ body.theme-pink { background: var(--bg); }
       <div class="card" style="padding:0;overflow:hidden" id="venue-cards"></div>
 
       <div style="margin-top:24px">
-        <div class="sec-label">Сброс</div>
+        <div class="sec-label" id="settings-reset-lbl">Сброс</div>
         <button onclick="resetAll()" style="width:100%;padding:12px;background:none;border:1px solid var(--red);border-radius:var(--radius-sm);color:var(--red);font-size:13px;font-family:var(--font-body);cursor:pointer">
           Сбросить все данные
         </button>
       </div>
 
       <div style="margin-top:32px;text-align:center;padding-bottom:8px">
-        <div style="font-size:12px;color:var(--text3)">Создатель</div>
-        <div style="font-size:14px;font-weight:500;color:var(--text2);margin-top:4px">Саша Нижегородцев</div>
+        <div style="font-size:12px;color:var(--text3)" id="creator-lbl">Создатель</div>
+        <div style="font-size:14px;font-weight:500;color:var(--text2);margin-top:4px" id="creator-name">Саша Нижегородцев</div>
       </div>
     </div>
 
@@ -491,7 +505,7 @@ body.theme-pink { background: var(--bg); }
 <div id="setpicker-overlay">
   <div id="setpicker-box">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
-      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">Выбери шутки</div>
+      <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)" id="setpicker-title">Выбери шутки</div>
       <button onclick="closeSetPicker()" style="background:none;border:none;color:var(--text3);font-size:22px;cursor:pointer;padding:0">✕</button>
     </div>
     <div id="setpicker-list" style="overflow-y:auto;flex:1"></div>
@@ -508,8 +522,8 @@ body.theme-pink { background: var(--bg); }
     </div>
     <div class="cal-grid" id="cal-grid"></div>
     <div style="display:flex;gap:10px">
-      <button onclick="closeDatePicker()" style="flex:1;padding:13px;background:var(--bg3);border:none;border-radius:12px;color:var(--text2);font-size:14px;font-family:var(--font-body);cursor:pointer">Отмена</button>
-      <button onclick="confirmDatePicker()" style="flex:1;padding:13px;background:var(--accent);border:none;border-radius:12px;color:#000;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer">OK</button>
+      <button onclick="closeDatePicker()" style="flex:1;padding:13px;background:var(--bg3);border:none;border-radius:12px;color:var(--text2);font-size:14px;font-family:var(--font-body);cursor:pointer" id="cal-cancel-btn">Отмена</button>
+      <button onclick="confirmDatePicker()" style="flex:1;padding:13px;background:var(--accent);border:none;border-radius:12px;color:#000;font-size:14px;font-family:var(--font-head);font-weight:700;cursor:pointer" id="cal-ok-btn">OK</button>
     </div>
   </div>
 </div>
@@ -539,24 +553,25 @@ if (tg) {
 }
 
 /* ── Constants ── */
-const RNAMES = ['Пожрал говно','Слабо','Норм','Хорошо','Разъебал'];
+const RNAMES_RU = ['Пожрал говно','Слабо','Норм','Хорошо','Разъебал'];
+const RNAMES_EN = ['Sucked','Weak','Ok','Good','Destroyed'];
+function getRnames() { return lang==='en' ? RNAMES_EN : RNAMES_RU; }
 
 const SEED_SHOWS = [];
 const SEED_JOKES = [
-  'Дрочка',
-  'Бедный',
-  'Политическая',
-  'Сперма',
-  'Гитлер',
+  'Jerking off',
+  'Poor',
+  'Political',
+  'Sperm',
+  'Hitler',
 ];
 
 const SEED_VENUES = [
-  'Ari',
-  'ПЭУ',
-  'Stage',
-  'Синий Пушкин',
-  'Capone',
-  'Платка',
+  'Comedy Cellar',
+  'The Comedy Store',
+  'Laugh Factory',
+  "Caroline's on Broadway",
+  'Zanies Comedy Club',
 ];
 
 /* ── Storage ── */
@@ -593,9 +608,11 @@ async function loadData() {
   if (!jokes || !jokes.length) jokes = SEED_JOKES.slice();
   if (!shows) shows = SEED_SHOWS.slice();
   if (!venues || !venues.length) venues = SEED_VENUES.slice();
+  lang = lsGet('sdc_lang', 'ru');
 
   storageReady = true;
   applyTheme();
+  applyLang();
   renderLog();
 }
 
@@ -629,6 +646,13 @@ function go(name) {
   document.getElementById('sc-'+name).classList.add('active');
   document.querySelector(`[data-screen="${name}"]`).classList.add('active');
   document.getElementById('content').scrollTop = 0;
+  // Update nav labels
+  document.querySelectorAll('[data-screen]').forEach(el => {
+    const s = el.dataset.screen;
+    const map = {log:'nav_show',stats:'nav_stats',jokes:'nav_jokes',history:'nav_history',tips:'nav_tips',settings:'nav_settings'};
+    const lbl = el.querySelector('.nav-label');
+    if (lbl && map[s]) lbl.textContent = t(map[s]);
+  });
   if (name==='log') renderLog();
   if (name==='stats') renderStats();
   if (name==='jokes') renderJokesList();
@@ -646,7 +670,7 @@ function populateVenueSelects() {
   if (cur && venues.includes(cur) && logSel) logSel.value = cur;
   if (statSel) {
     const curSt = statSel.value;
-    statSel.innerHTML = '<option value="">Все площадки</option>' + venues.map(v=>`<option>${v}</option>`).join('');
+    statSel.innerHTML = `<option value="">${t('stats_filter_all')}</option>` + venues.map(v=>`<option>${v}</option>`).join('');
     if (curSt) statSel.value = curSt;
   }
 }
@@ -666,12 +690,52 @@ function renderLog() {
     calSelected = today;
     const iso = today.toISOString().split('T')[0];
     document.getElementById('l-date').value = iso;
-    lbl.textContent = today.toLocaleDateString('ru-RU', {day:'numeric', month:'long', year:'numeric'});
+    lbl.textContent = today.toLocaleDateString(lang==='en'?'en-GB':'ru-RU', {day:'numeric', month:'long', year:'numeric'});
     btn.style.borderColor = 'var(--border)';
     btn.style.color = 'var(--text)';
   }
   const ng = document.getElementById('l-note-good');
   if (ng) ng.value = '';
+
+  // Update static labels
+  const logTitle = document.querySelector('#sc-log .page-title');
+  const logSub = document.querySelector('#sc-log .page-sub');
+  if (logTitle) logTitle.textContent = t('log_title');
+  if (logSub) logSub.textContent = t('log_sub');
+  document.querySelector('[for="l-venue"], #sc-log .field-label')?.forEach?.(() => {});
+  document.querySelectorAll('#sc-log .field-label').forEach((el, i) => {
+    if (i===0) el.textContent = t('log_venue');
+    if (i===1) el.textContent = t('log_aud');
+    if (i===2) el.textContent = t('log_date');
+  });
+  // Update aud options
+  const audSel = document.getElementById('l-aud');
+  if (audSel) {
+    const opts = [t('aud0'),t('aud1'),t('aud2'),t('aud3'),t('aud4')];
+    const cur = audSel.selectedIndex;
+    audSel.innerHTML = opts.map(o=>`<option>${o}</option>`).join('');
+    audSel.selectedIndex = cur;
+  }
+  // Update date button text
+  const dateLbl = document.getElementById('date-btn-label');
+  if (dateLbl && dateLbl.textContent === 'Выбрать дату' || dateLbl?.textContent === 'Choose date') {
+    dateLbl.textContent = t('log_date_btn');
+  }
+  // Update setlist label and add button
+  const setLabel = document.querySelector('#sc-log .sec-label');
+  if (setLabel) setLabel.textContent = t('log_setlist');
+  const addBtn = document.querySelector('#sc-log .sec-label + button, #sc-log [onclick="openSetPicker()"]');
+  // Update save button
+  const saveBtn = document.getElementById('save-btn');
+  if (saveBtn) saveBtn.textContent = t('log_save');
+  // Update notes label
+  document.querySelectorAll('#sc-log .sec-label').forEach(el => {
+    if (el.textContent === 'Заметки' || el.textContent === 'Notes') el.textContent = t('log_notes');
+    if (el.textContent === 'Сет-лист на сегодня' || el.textContent === "Tonight's setlist") el.textContent = t('log_setlist');
+  });
+  const notesPh = document.getElementById('l-note-good');
+  if (notesPh) notesPh.placeholder = t('log_notes_ph');
+
   renderSetJokes();
 }
 
@@ -693,7 +757,7 @@ function renderSetJokes() {
           <div class="drag-handle" data-pos="${pos}" style="font-size:18px;color:var(--text3);cursor:grab;padding:2px 4px;touch-action:none">☰</div>
         </div>
         <div class="reactions" id="lr-${ji}">
-          ${RNAMES.map((r,ri) => `<button class="r-btn" onclick="logRate(${ji},${ri},this)">${r}</button>`).join('')}
+          ${getRnames().map((r,ri) => `<button class="r-btn" onclick="logRate(${ji},${ri},this)">${r}</button>`).join('')}
         </div>
       </div>
     </div>`).join('');
@@ -823,8 +887,10 @@ let pickerSelected = new Set();
 function openSetPicker() {
   pickerSelected = new Set(setJokes);
   const el = document.getElementById('setpicker-list');
+  const title = document.getElementById('setpicker-title');
+  if (title) title.textContent = t('picker_title');
   if (!jokes.length) {
-    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px">Сначала добавь шутки во вкладке 🃏</div>';
+    el.innerHTML = `<div style="padding:20px;text-align:center;color:var(--text2);font-size:13px">${t('picker_empty')}</div>`;
   } else {
     el.innerHTML = jokes.map((j,i) => `
       <div class="setpicker-item" onclick="togglePicker(${i})">
@@ -880,7 +946,7 @@ function logRate(ji, ri, btn) {
 }
 
 function saveShow() {
-  if (!Object.keys(logRatings).length) { toast('Оцени хотя бы одну шутку'); return; }
+  if (!Object.keys(logRatings).length) { toast(t('log_rate_one')); return; }
   const venue = document.getElementById('l-venue').value;
   const aud = document.getElementById('l-aud').value;
   const dateVal = document.getElementById('l-date').value;
@@ -895,7 +961,7 @@ function saveShow() {
   shows.push({ venue, aud, date, ratings:{...logRatings}, noteGood });
   persist();
   if (tg) tg.HapticFeedback?.notificationOccurred('success');
-  toast('✓ Выступление сохранено');
+  toast(t('log_save_ok'));
   setTimeout(() => go('stats'), 700);
 }
 
@@ -914,9 +980,9 @@ function renderStats() {
   const trendColor = trend === null ? '' : trend > 0.1 ? 'color:var(--accent)' : trend < -0.1 ? 'color:var(--red)' : 'color:var(--text3)';
 
   document.getElementById('st-metrics').innerHTML = `
-    <div class="metric"><div class="metric-val">${fs.length}</div><div class="metric-lbl">Шоу</div></div>
-    <div class="metric"><div class="metric-val">${allSc.length?ga.toFixed(1):'—'}</div><div class="metric-lbl">Все шоу</div></div>
-    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?last5Avg.toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">Посл. 3 шоу</div></div>`;
+    <div class="metric"><div class="metric-val">${fs.length}</div><div class="metric-lbl">${t('stats_shows')}</div></div>
+    <div class="metric"><div class="metric-val">${allSc.length?ga.toFixed(1):'—'}</div><div class="metric-lbl">${t('stats_all')}</div></div>
+    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?last5Avg.toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">${t('stats_last3')}</div></div>`;
 
   if (fs.length >= 3) {
     const showAvgs = fs.map(s => {
@@ -952,20 +1018,20 @@ function renderStats() {
 
   const el = document.getElementById('st-list');
   if (!ranked.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Нет данных для выбранной площадки</div></div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">'+t('stats_no_data')+'</div></div>';
     return;
   }
   el.innerHTML = ranked.map(r => {
     const pct = Math.round((r.a/4)*100);
     const badge = r.a>=3.5?'badge-hot':r.a>=2.5?'badge-ok':'badge-cold';
-    const bLabel = r.a>=3.5?'Хит':r.a>=2.5?'Средне':'Слабая';
+    const bLabel = r.a>=3.5?t('badge_hot'):r.a>=2.5?t('badge_ok'):t('badge_cold');
     return `<div class="joke-row" onclick="go('jokes');setTimeout(()=>openDetail(${r.idx}),300)">
       <div class="joke-row-info">
         <div class="joke-row-name">${r.name}</div>
         <div style="margin-top:6px">
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(r.a)}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px">
-            <span style="font-size:11px;color:var(--text3)">${r.cnt} проверки</span>
+            <span style="font-size:11px;color:var(--text3)">${r.cnt} ${t('checks')}</span>
             <span style="font-size:12px;color:var(--text2)">${r.a.toFixed(1)} / 4</span>
           </div>
         </div>
@@ -996,9 +1062,10 @@ function renderJokesList() {
   document.getElementById('jk-list-view').style.display = 'block';
   document.getElementById('jk-detail-view').style.display = 'none';
 
-  const venues = ['Все', ...new Set(shows.map(s=>s.venue))];
+  const allLabel = t('detail_all');
+  const venues = [allLabel, ...new Set(shows.map(s=>s.venue))];
   document.getElementById('jk-chips').innerHTML = venues.map(v =>
-    `<button class="chip${jkFilter===(v==='Все'?'':v)?' on':''}" onclick="setJkFilter('${v==='Все'?'':v}',this)">${v}</button>`
+    `<button class="chip${jkFilter===(v===allLabel?'':v)?' on':''}" onclick="setJkFilter('${v===allLabel?'':v}',this)">${v}</button>`
   ).join('');
 
   const search = document.getElementById('joke-search')?.value.trim().toLowerCase() || '';
@@ -1026,7 +1093,7 @@ function renderJokesList() {
             ${trendEl}<span style="font-size:11px;color:var(--text3)">${sc.length} пров.</span>
             <span style="font-size:12px;color:var(--text2)">${a.toFixed(1)}/4</span>
           </div>
-        </div>`:'<div class="joke-row-sub">Нет данных — нажми › чтобы открыть</div>'}
+        </div>`:`<div class="joke-row-sub">${t('jokes_no_data')}</div>`}
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
         <button onclick="startEdit(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)" title="Редактировать">✏️</button>
@@ -1052,7 +1119,7 @@ function addJoke() {
   persist();
   inp.value = '';
   if (tg) tg.HapticFeedback?.impactOccurred('medium');
-  toast('Шутка добавлена');
+  toast(t('jokes_added'));
   renderJokesList();
   renderLog();
 }
@@ -1088,7 +1155,7 @@ function saveEdit(i) {
   inp?.blur();
   jokes[i] = val;
   persist();
-  toast('Сохранено');
+  toast(t('jokes_saved'));
   setTimeout(() => {
     renderJokesList();
     renderLog();
@@ -1141,9 +1208,10 @@ function _renderDetail() {
     <div class="metric"><div class="metric-val">${filtH.length}</div><div class="metric-lbl">Проверки</div></div>
     <div class="metric"><div class="metric-val" style="font-size:14px;color:${trendColor}">${trendText}</div><div class="metric-lbl">Тренд</div></div>`;
 
-  const venues = ['Все',...new Set(allH.map(h=>h.venue))];
+  const allLbl = t('detail_all');
+  const venues = [allLbl,...new Set(allH.map(h=>h.venue))];
   document.getElementById('d-chips').innerHTML = venues.map(v =>
-    `<button class="chip${detailVf===(v==='Все'?'':v)?' on':''}" onclick="setDetailVf('${v==='Все'?'':v}',this)">${v}</button>`
+    `<button class="chip${detailVf===(v===allLbl?'':v)?' on':''}" onclick="setDetailVf('${v===allLbl?'':v}',this)">${v}</button>`
   ).join('');
 
   document.getElementById('d-hist').innerHTML = filtH.length ?
@@ -1154,7 +1222,7 @@ function _renderDetail() {
           <div class="show-venue">${h.venue}</div>
           <div class="show-meta">${h.date} · ${h.aud}</div>
         </div>
-        <span class="pill pill-${h.score}">${RNAMES[h.score]}</span>
+        <span class="pill pill-${h.score}">${getRnames()[h.score]}</span>
       </div>`).join('') :
     '<div class="empty" style="padding:24px"><div class="empty-text">Нет данных</div></div>';
 
@@ -1188,9 +1256,9 @@ function _drawChart(hist) {
     },
     options:{
       responsive:true,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+RNAMES[ctx.raw]}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+getRnames()[ctx.raw]}}},
       scales:{
-        y:{min:0,max:4,ticks:{stepSize:1,color:'#555',callback:v=>RNAMES[v]||''},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{min:0,max:4,ticks:{stepSize:1,color:'#555',callback:v=>getRnames()[v]||''},grid:{color:'rgba(255,255,255,0.05)'}},
         x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}}
       }
     }
@@ -1198,21 +1266,21 @@ function _drawChart(hist) {
 }
 
 function buildInsights(ji, hist) {
-  if (!hist.length) return [{t:'Нет данных',b:'Сыграй хотя бы одно выступление с этой шуткой.'}];
+  if (!hist.length) return [{t:t('insight_no_data'),b:t('insight_no_data_b')}];
   const ins = [];
   const byV = {};
   hist.forEach(h=>{ if(!byV[h.venue])byV[h.venue]=[]; byV[h.venue].push(h.score); });
   const va = Object.entries(byV).map(([v,sc])=>({v,a:avg(sc)})).sort((a,b)=>b.a-a.a);
   if (va.length>=2 && va[0].a-va[va.length-1].a>=1)
-    ins.push({t:`Лучше в «${va[0].v}»`,b:`Средний ${va[0].a.toFixed(1)} против ${va[va.length-1].a.toFixed(1)} в «${va[va.length-1].v}».`});
+    ins.push({t:`${t('insight_better')} «${va[0].v}»`,b:`${t('insight_vs')} ${va[0].a.toFixed(1)} ${t('insight_vs2')} ${va[va.length-1].a.toFixed(1)} «${va[va.length-1].v}».`});
   const sc = hist.map(h=>h.score);
   const trend = sc[sc.length-1]-sc[0];
-  if (sc.length>=3 && trend>=2) ins.push({t:'Шутка обкатывается',b:`За ${sc.length} проверки балл вырос с ${sc[0]} до ${sc[sc.length-1]}. Продолжай использовать.`});
-  if (sc.length>=3 && trend<=-2) ins.push({t:'Шутка выгорает',b:`Балл упал с ${sc[0]} до ${sc[sc.length-1]}. Попробуй переписать панчлайн.`});
+  if (sc.length>=3 && trend>=2) ins.push({t:t('insight_growing'),b:`${t('insight_growing_b')} ${sc[0]} — ${sc[sc.length-1]}. ${t('insight_growing_c')}`});
+  if (sc.length>=3 && trend<=-2) ins.push({t:t('insight_fading'),b:`${t('insight_fading_b')} ${sc[0]} — ${sc[sc.length-1]}. ${t('insight_fading_c')}`});
   const a = avg(sc);
   if (sc.length>=4 && Math.max(...sc)-Math.min(...sc)<=1)
-    ins.push({t:'Стабильный результат',b:`Отклонение минимальное — всегда ${a.toFixed(1)}/4. ${a>=3?'Надёжный материал.':'Потолок невысокий — рассмотри переработку.'}`});
-  if (!ins.length) ins.push({t:'Собирай данные',b:'Нужно больше проверки, чтобы увидеть паттерны.'});
+    ins.push({t:t('insight_stable'),b:`${a.toFixed(1)}/4. ${a>=3?t('insight_stable_b'):t('insight_stable_c')}`});
+  if (!ins.length) ins.push({t:t('insight_more'),b:t('insight_more_b')});
   return ins;
 }
 
@@ -1227,7 +1295,7 @@ function renderVenues() {
     <div class="joke-row" id="vrow-${i}">
       <div class="joke-row-info">
         <div class="joke-row-name" id="vname-${i}">${v}</div>
-        <div class="joke-row-sub">${shows.filter(s=>s.venue===v).length} выступлений</div>
+        <div class="joke-row-sub">${shows.filter(s=>s.venue===v).length} ${lang==='en'?'shows':'выступлений'}</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
         <button onclick="startEditVenue(${i})" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 6px;color:var(--text3)">✏️</button>
@@ -1245,7 +1313,7 @@ function addVenue() {
   persist();
   inp.value = '';
   if (tg) tg.HapticFeedback?.impactOccurred('medium');
-  toast('Площадка добавлена');
+  toast(t('settings_venue_added'));
   renderVenues();
   populateVenueSelects();
 }
@@ -1287,13 +1355,13 @@ function deleteVenue(i) {
 }
 
 function resetAll() {
-  showConfirm('Удалить все данные?', 'Шутки, площадки и история выступлений будут сброшены. Это нельзя отменить.', () => {
+  showConfirm(t('settings_reset_title'), t('settings_reset_text'), () => {
     jokes = SEED_JOKES.slice();
     shows = SEED_SHOWS.slice();
     venues = SEED_VENUES.slice();
     persist();
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
-    toast('Данные сброшены');
+    toast(t('settings_reset_done'));
     renderVenues();
     renderLog();
   });
@@ -1356,35 +1424,80 @@ function screenshotHint() {
 
 /* ── TIPS ── */
 const TIPS = [
-  'Записывай каждое выступление. Самое сложное — прослушать запись и расшифровать всё, что хочешь сказать снова. Это может быть трудно, но именно это заставляет тебя сделать самое трудное — сесть и писать. Обычно в процессе придумываешь, что добавить или изменить.',
-  'Перепиши любимую шутку слово в слово, по одному предложению. Закончив каждое — анализируй каждое слово. Почему это работает? Как слоги создают ритм? Как предложения ведут к панчлайну? Какова грамматика комедии?',
-  'Просмотри старый блокнот или файл. Скорее всего найдёшь предпосылку, фразу или предложение, о которых забыл. Перепиши перспективную идею с тем мастерством, которое приобрёл с тех пор.',
-  'Прокрастинируешь? Открой блокнот или ноутбук. Поставь таймер на любимое число от 15 до 19 минут. Пиши, пока таймер не сработает. Не проверяй телефон! Если захочется продолжить — продолжай.',
-  'Марк Твен говорил, перефразирую: «Разница между нужным словом и почти нужным — как разница между молнией и светлячком». Ты давно собирался это сделать. Пройдись по своим шуткам и добавь немного молнии сегодня.',
-  'Слова со звуками «б», «п» и «к» — особенно в начале или конце — звучат смешнее. Никто не знает почему. «Buick» смешнее, чем «Nissan». Замени мягкие слова-панчи на слова с этими звуками.',
-  'Найди друга-комика, позвони или встреться, разберите шутки, предпосылки, идеи. Играйте в «Это смешно?». Будь честным, но мягким — и не жди просто своей очереди! Скажи, если слышал похожее. Двое — идеально, больше — тоже ок.',
-  'Когда пробуешь новые шутки — будь готов. Начни с нескольких проверенных, чтобы оценить настрой зала. Убедись, что после новой шутки есть надёжная — на случай провала.\n\n«Провалить подготовку — значит подготовить провал». — Джон Вуден. «Проваливаться — нормально! Но не проваливайся из-за лени». — Я.\n\n99% комиков, которых я люблю, изучают заметки перед выходом на сцену. Это не случайность.',
-  'Каннибализируй свой номер. Просмотри весь запас шуток и перемести некоторые или их фрагменты. Добавь их к работающим шуткам — это придаст материалу плотность. Просто найди время нащупать связь.',
-  'Выходи на сцену! Записать шутку — это меньше 50% процесса. Тебе нужно выступать безумно много, прежде чем поймёшь, как писать для стендап-аудитории.\n\nЯ выходил, пока мой друг делал перерыв от пения. Аудитория не слушала ни слова. Я часто рассказывал одну шутку трижды — просто чтобы отработать ритм и научиться держать микрофон.',
-  'Плохое выступление? Иди домой и пиши. Отличное выступление? Иди домой и пиши. Тебя обидели? Иди домой и пиши. Мало что в шоу-бизнесе снимает ощущение беспомощности так, как занятие тем, над чем ты действительно властен.',
-  'Читай эссе Эмерсона «Доверие к себе» прямо сейчас! Уже читал? Читай снова. В нём золото. Это будет самый непопулярный совет, но на самом деле — самый ценный из всех.',
-  'beckett_special',
+  {
+    ru: 'Записывай аудио/видео каждого выступления. Сложная часть: послушай это и расшифруй все, что ты хочешь сказать снова. Иногда это удручает, но заставляет тебя выполнять самую сложную часть — сидеть и писать. Обычно ты придумываешь, что добавить или изменить.',
+    en: 'Record audio/video of every performance. The hard part: listen back and transcribe everything you want to say again. Sometimes it\'s demoralizing but it forces you to do the hardest part — sit and write. You usually figure out what to add or change.',
+  },
+  {
+    ru: 'Выпиши любимую шутку слово за словом, по одному предложению за раз. После завершения каждого предложения проанализируй каждое слово. Почему это работает? Как слоги слов создают ритм? Как предложения строятся для панчлайна? Какая грамматика комедии?',
+    en: 'Write out a favorite joke word for word, 1 sentence at a time. After completing each sentence, analyze each word. Why does it work? How do the syllables create rhythm? How do the sentences build to the punchline? What\'s the grammar of comedy?',
+  },
+  {
+    ru: 'Открой старый блокнот / файл. Ты, вероятно, найдёшь предпосылку / предложение / фразу, которую забыл. Перепиши свою многообещающую идею с умением, которое ты заработал с тех пор, как впервые записал её.',
+    en: 'Go through an old notebook/file. You will probably find a premise/sentence/phrase that you forgot. Rewrite your promising idea with the skill you\'ve earned since you first wrote it down.',
+  },
+  {
+    ru: 'Прокрастинируешь? Открой свой блокнот / ноутбук. Установи таймер от 15 до 19 минут. ПИШИ, ПОКА ВРЕМЯ НЕ ВЫЙДЕТ. НЕ ПРОВЕРЯЙ СВОЙ ТЕЛЕФОН! Если тебе это нравится — продолжай писать.',
+    en: 'Procrastinating? Open your notebook/laptop. Set a timer to your favorite number between 15 and 19 minutes. WRITE UNTIL THE TIMER GOES OFF. NO CHECKING YOUR PHONE! If you feel like it, keep writing.',
+  },
+  {
+    ru: 'Марк Твен сказал, и я перефразирую: «Разница между правильным словом и почти правильным словом — это разница между светом и светлячком». Ты давно хотел это сделать. Улучшай свои шутки и добавь в них немного света СЕГОДНЯ.',
+    en: 'Mark Twain said, paraphrasing: "The difference between the right word and the almost right word is the difference between lightning and a lightning bug." You\'ve been meaning to do this. Go through your jokes and add some lightning TODAY.',
+  },
+  {
+    ru: 'Слова со звуком «бух», «пух» и «кух», особенно в начале/конце — смешнее. Никто не знает почему. «Бьюик» смешнее, чем «Ниссан». Возьми несколько мягких ударных слов и замени их звуком б/п/к.',
+    en: 'Words with the sound "buh", "puh" and "kuh", esp. at the beginning/end are funnier. No one knows why. "Buick" is funnier than "Nissan". Take some soft punch-words and replace them with a b/p/k sound.',
+  },
+  {
+    ru: 'Найди друга-комика, чтобы звонить/встречаться и изучать шутки/предпосылки/идеи. Играйте в «Это смешно?» Будьте честны, но нежны — ТОЛЬКО НЕ ЖДИТЕ СВОЕЙ ОЧЕРЕДИ! Скажите им, если вы слышали подобные биты! 2 человека — более чем достаточно.',
+    en: 'Find a comic friend to call/meet and go over jokes/premises/ideas. Play "Is This Funny?" Be honest but gentle & DON\'T JUST WAIT UNTIL IT\'S YOUR TURN! Tell them if you\'ve heard similar bits! 2 people is best, more is ok.',
+  },
+  {
+    ru: 'Прежде чем проверять новые шутки, вы должны ПОДГОТОВИТЬСЯ. Начните с нескольких проверенных шуток, чтобы убедиться, что толпа восприимчива. Убедитесь, что у вас есть хорошая шутка в запасе, если первая не зайдёт.\n\n«Неспособность подготовиться — значит готовиться к неудаче». — Джон Вуден. «Всё окей, если не получится! Но не терпите неудачу из-за того, что вы ленились». — Я\n\n99% комиков, которых я люблю, читают заметки, прежде чем выйти на сцену. Это не совпадение.',
+    en: 'When trying out new jokes you have to be PREPARED. Start with a few proven jokes to gauge the crowd. Make sure you have a good one loaded to follow the new one in case it dies.\n\n"Failing to prepare is preparing to fail." — John Wooden. "It\'s ok to fail! But don\'t fail because you were being lazy." — Me\n\n99% of the comedians I love are going over notes before they get on stage. That\'s not a coincidence.',
+  },
+  {
+    ru: 'Препарируй свой материал. Проверь свой юмористический инвентарь и перемести некоторые шутки или части шуток. Добавь их в шутки, которые работают, чтобы добавить плотность к своему материалу. Просто нужно некоторое время, чтобы найти связь.',
+    en: 'Cannibalize your act. Go through your joke inventory and relocate some jokes or pieces of jokes. Add them to jokes that are working to add some density. You just need to take some time to find a connection.',
+  },
+  {
+    ru: 'Выступай! Написание шутки составляет менее 50% от всего процесса. Тебе нужно выступать как можно больше, пока не поймёшь, как правильно писать для разной публики. Я выбрал выступать 5 раз в неделю в качестве минимума, когда начинал.\n\nЯ выходил, пока мой друг делал перерыв от пения. Аудитория не слушала ни слова. Я часто рассказывал одну шутку трижды — просто чтобы отработать ритм и научиться держать микрофон.',
+    en: 'Get on stage! Writing a joke is less than 50% of the process. You need to get on stage a ridiculous amount before you figure out how to write for standup audiences. I chose 5/week as my MINIMUM when I began.\n\nI\'d go up while my friend took a break from singing. The audience wasn\'t listening. I\'d often do the same joke three times just to work on the rhythm and learn how to hold the mic.',
+  },
+  {
+    ru: 'Было плохое выступление? Иди домой и пиши. Было отличное выступление? Иди домой и пиши. Подъебал Дима Бахметьев? Иди домой и пиши. Мало что может компенсировать чувство беспомощности в шоу-бизнесе, чем участие в одной из немногих вещей, которые ты полностью контролируешь.\n\nЯ не говорю, не тусоваться с друзьями. Но всё же, ты должен ограничить это. У тебя будет много времени тусоваться, когда ты станешь комиком полный рабочий день.',
+    en: 'Had a bad set? Go home and write. Had a great set? Go home and write. Got bumped? Go home and write. Few things can offset the feelings of helplessness in show business than engaging in one of the few things over which you have total control.\n\nI\'m not saying don\'t hang out with your friends. You need to limit it though. There will be plenty of time to hang out when you\'re full time.',
+  },
+  {
+    ru: 'Прочти «Доверие к себе» Эмерсона ПРЯМО СЕЙЧАС! Уже прочитал? ЧИТАЙ СНОВА. Внутри золото. Пока это будет наименее популярный совет, но на самом деле это самый ценный совет.',
+    en: 'Read Emerson\'s "Self Reliance" NOW! Already read it? READ IT AGAIN. There is gold within. It will be the least popular tip so far but it\'s actually the most valuable tip yet.',
+  },
+  { beckett: true },
 ];
 
 let currentTipIdx = 0;
 
 function renderTip(idx) {
-  document.getElementById('tip-num').textContent = `Совет ${idx + 1} из ${TIPS.length}`;
+  document.getElementById('tip-num').textContent = `${t('tips_tip')} ${idx + 1} ${t('tips_of')} ${TIPS.length}`;
   const tipEl = document.getElementById('tip-text');
+  const tip = TIPS[idx];
 
-  // Special formatting for tip 13 (Beckett quote)
-  if (idx === 12) {
-    tipEl.innerHTML = `
-      <div style="font-size:15px;color:var(--text);line-height:1.7;margin-bottom:16px">«Пробовал. Терпел неудачу. Неважно. Попробуй снова. Потерпи неудачу снова. Терпи неудачу лучше.»<br><span style="color:var(--text2);font-size:13px">— Сэмюэл Беккет</span></div>
-      <div style="font-size:13px;color:rgba(255,255,255,0.25);font-style:italic;line-height:1.6;margin-bottom:16px">"Ever tried. Ever failed. No matter. Try again. Fail again. Fail better."<br><span style="font-size:12px">— Samuel Beckett</span></div>
-      <div style="font-size:15px;color:var(--text);line-height:1.7">Это у меня висит в рамке у кровати. Воспринимаю как официальное разрешение на провал. Выйди на сцену сегодня и сделай то, чего боишься — то, что почти наверняка провалится. Если только это не важное выступление.</div>`;
+  if (tip.beckett) {
+    if (lang==='en') {
+      tipEl.innerHTML = `
+        <div style="font-size:15px;color:var(--text);line-height:1.7;margin-bottom:16px">"Ever tried. Ever failed. No matter. Try again. Fail again. Fail better."<br><span style="color:var(--text2);font-size:13px">— Samuel Beckett</span></div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.25);font-style:italic;line-height:1.6;margin-bottom:16px">«Пробовал. Терпел неудачу. Неважно. Попробуй снова. Потерпи неудачу снова. Терпи неудачу лучше.»<br><span style="font-size:12px">— Сэмюэл Беккет</span></div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">I have this framed on a wall next to the bed. I interpret it as endorsed permission to fail. Go on stage tonight and do something you're afraid to do, that you're almost certain will fail. (Unless it's an important show.)</div>`;
+    } else {
+      tipEl.innerHTML = `
+        <div style="font-size:15px;color:var(--text);line-height:1.7;margin-bottom:16px">«Пробовал. Терпел неудачу. Неважно. Попробуй снова. Потерпи неудачу снова. Терпи неудачу лучше.»<br><span style="color:var(--text2);font-size:13px">— Сэмюэл Беккет</span></div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.25);font-style:italic;line-height:1.6;margin-bottom:16px">"Ever tried. Ever failed. No matter. Try again. Fail again. Fail better."<br><span style="font-size:12px">— Samuel Beckett</span></div>
+        <div style="font-size:15px;color:var(--text);line-height:1.7">Это у меня висит в рамке у кровати. Воспринимаю как официальное разрешение на провал. Выйди на сцену сегодня и сделай то, чего боишься — то, что почти наверняка провалится. Если только это не важное выступление.</div>`;
+    }
   } else {
-    tipEl.textContent = TIPS[idx];
+    const text = lang==='en' ? tip.en : tip.ru;
+    const lines = text.split('\n\n').map(p => `<p style="margin-bottom:12px">${p}</p>`).join('');
+    tipEl.innerHTML = `<div style="font-size:15px;color:var(--text);line-height:1.7">${lines}</div>`;
   }
 
   currentTipIdx = idx;
@@ -1540,9 +1653,9 @@ function shareShow(i) {
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;';
   overlay.innerHTML = `
-    <div style="font-size:13px;color:#888;margin-bottom:12px;text-align:center">Сделай скриншот чтобы сохранить</div>
+    <div style="font-size:13px;color:#888;margin-bottom:12px;text-align:center">${t('share_screenshot')}</div>
     <img src="${dataUrl}" id="share-img" style="max-width:100%;max-height:80vh;border-radius:16px;object-fit:contain;display:block">
-    <button onclick="this.closest('div[style*=fixed]').remove()" style="margin-top:16px;padding:12px 32px;background:#222;color:#fff;border:none;border-radius:24px;font-size:14px;cursor:pointer">Закрыть</button>
+    <button onclick="this.closest('div[style*=fixed]').remove()" style="margin-top:16px;padding:12px 32px;background:#222;color:#fff;border:none;border-radius:24px;font-size:14px;cursor:pointer">${t('share_close')}</button>
   `;
   document.body.appendChild(overlay);
   if (tg) tg.HapticFeedback?.notificationOccurred('success');
@@ -1566,7 +1679,7 @@ function roundRect(ctx, x, y, w, h, r) {
 function renderHistory() {
   const el = document.getElementById('hist-list');
   if (!shows.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">Выступлений пока нет</div></div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">'+t('hist_empty')+'</div></div>';
     return;
   }
   const reversed = [...shows].map((s,i)=>({...s,origIdx:i})).reverse();
@@ -1619,7 +1732,7 @@ function viewShow(i) {
             <div class="show-info">
               <div class="show-venue" style="font-size:13px">${jokes[ji] || 'Шутка #'+ji}</div>
             </div>
-            <span class="pill pill-${score}">${RNAMES[score]}</span>
+            <span class="pill pill-${score}">${getRnames()[score]}</span>
           </div>`;
         }).join('')}
       </div>
@@ -1648,7 +1761,7 @@ function editShow(i) {
         <div class="card card-sm" style="margin-bottom:8px">
           <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px">${jokes[ji] || 'Шутка #'+ji}</div>
           <div style="display:flex;gap:5px;flex-wrap:wrap" id="edit-r-${ji}">
-            ${RNAMES.map((r,ri) => `<button class="r-btn${s.ratings[ji]===ri?' sel sel-'+ri:''}" onclick="editRate(${i},${ji},${ri})">${r}</button>`).join('')}
+            ${getRnames().map((r,ri) => `<button class="r-btn${s.ratings[ji]===ri?' sel sel-'+ri:''}" onclick="editRate(${i},${ji},${ri})">${r}</button>`).join('')}
           </div>
         </div>`).join('')}
       <div class="sec-label" style="margin-bottom:6px;margin-top:14px">Заметки</div>
@@ -1674,11 +1787,11 @@ function saveEditShow(i) {
 }
 
 function deleteShow(i) {
-  showConfirm('Удалить выступление?', `${shows[i].date} · ${shows[i].venue}`, () => {
+  showConfirm(t('hist_del_title'), `${shows[i].date} · ${shows[i].venue}`, () => {
     shows.splice(i, 1);
     persist();
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
-    toast('Выступление удалено');
+    toast(t('hist_deleted'));
     renderHistory();
   });
 }
@@ -1728,8 +1841,12 @@ function calSelect(y, m, d) {
 }
 
 function renderCal() {
-  const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-  const DAYS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const MONTHS_RU = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+  const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS_RU = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+  const DAYS_EN = ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  const MONTHS = lang==='en' ? MONTHS_EN : MONTHS_RU;
+  const DAYS = lang==='en' ? DAYS_EN : DAYS_RU;
   document.getElementById('cal-month-label').textContent = MONTHS[calMonth] + ' ' + calYear;
 
   const today = new Date();
@@ -1753,6 +1870,262 @@ function renderCal() {
   }
 
   document.getElementById('cal-grid').innerHTML = html;
+}
+
+/* ── I18N ── */
+let lang = 'ru';
+
+const I18N = {
+  ru: {
+    // Nav
+    nav_show: 'Шоу', nav_stats: 'Аналитика', nav_jokes: 'Шутки',
+    nav_history: 'История', nav_tips: 'Советы', nav_settings: 'Настройки',
+    // Log screen
+    log_title: 'Новое выступление', log_sub: 'Оцени каждую шутку после шоу',
+    log_venue: 'Площадка', log_aud: 'Кол-во зрителей', log_date: 'Дата',
+    log_date_btn: 'Выбрать дату', log_setlist: 'Сет-лист на сегодня',
+    log_add: '+ Добавить', log_empty_set: 'Нажми «+ Добавить» чтобы выбрать шутки',
+    log_notes: 'Заметки', log_notes_ph: 'Заметки о выступлении...',
+    log_save: 'Сохранить выступление', log_save_ok: '✓ Выступление сохранено',
+    log_rate_one: 'Оцени хотя бы одну шутку',
+    // Reactions
+    r0: 'Пожрал говно', r1: 'Слабо', r2: 'Норм', r3: 'Хорошо', r4: 'Разъебал',
+    // Stats
+    stats_title: 'Аналитика', stats_shows: 'Шоу', stats_all: 'Все шоу',
+    stats_last3: 'Посл. 3 шоу', stats_jokes_lbl: 'Шуток', stats_filter_all: 'Все площадки',
+    stats_ranking: 'Рейтинг шуток', stats_notes_lbl: 'Последние заметки',
+    stats_no_data: 'Нет данных для выбранной площадки',
+    badge_hot: 'Хит', badge_ok: 'Средне', badge_cold: 'Слабая',
+    checks: 'проверки',
+    trend_up: '↑ Растёт', trend_dn: '↓ Падает', trend_eq: '→ Стабильно',
+    trend_growing: 'Средний балл вырос на', trend_vs: 'по сравнению с первыми 3 шоу. Ты растёшь!',
+    trend_falling: 'Средний балл упал на', trend_vs2: 'по сравнению с первыми 3 шоу. Время пересмотреть материал.',
+    trend_stable: 'Средний балл стабилен. Попробуй добавить новый материал.',
+    // Jokes
+    jokes_title: 'Шутки', jokes_add_ph: 'Добавить шутку...', jokes_search_ph: '🔍 Поиск...',
+    jokes_empty: 'Добавь шутки выше', jokes_no_data: 'Нет данных — нажми › чтобы открыть',
+    jokes_added: 'Шутка добавлена', jokes_saved: 'Сохранено', jokes_deleted: 'Шутка удалена',
+    // Detail
+    detail_score: 'Балл', detail_checks: 'Проверки', detail_trend: 'Тренд',
+    detail_all: 'Все', detail_history: 'История', detail_insights: 'Инсайты',
+    detail_no_data: 'Нет данных',
+    insight_better: 'Лучше в', insight_vs: 'Средний', insight_vs2: 'против',
+    insight_growing: 'Шутка обкатывается', insight_growing_b: 'балл вырос с',
+    insight_growing_c: 'Продолжай использовать.',
+    insight_fading: 'Шутка выгорает', insight_fading_b: 'Балл упал с',
+    insight_fading_c: 'Попробуй переписать панчлайн.',
+    insight_stable: 'Стабильный результат', insight_stable_b: 'Надёжный материал.',
+    insight_stable_c: 'Потолок невысокий — рассмотри переработку.',
+    insight_more: 'Собирай данные', insight_more_b: 'Нужно больше проверок, чтобы увидеть паттерны.',
+    insight_no_data: 'Нет данных', insight_no_data_b: 'Сыграй хотя бы одно выступление с этой шуткой.',
+    // History
+    hist_title: 'История', hist_empty: 'Выступлений пока нет',
+    hist_score: 'Средний', hist_jokes_count: 'шут.',
+    hist_share: '📸 Поделиться', hist_edit: '✏️ Редактировать',
+    hist_edit_ratings: 'Оценки шуток', hist_save: 'Сохранить',
+    hist_deleted: 'Выступление удалено',
+    hist_del_title: 'Удалить выступление?',
+    // Tips
+    tips_title: 'Советы', tips_btn: '🎲 Случайный совет',
+    tips_of: 'из', tips_tip: 'Совет',
+    tips_count: 'В приложении добавлено 13 советов из 366',
+    gulman_bio: '1 января 2019 года американский комик Гэри Гулман, к тому моменту уже 25 лет в профессии, начал публиковать советы по написанию шуток в своём Twitter. Каждый день — один совет уровня мастер-класса по комедии и жизни. Изначально он писал для комиков, но постепенно его советы стали популярны и среди смежных специалистов — писателей, музыкантов и художников.<br><br>Советы выходили под хэштегом #GulmanTip и в большинстве своём призывали #ПишиСейчас. Гулман также затрагивал темы организации, лайфхаки для гастролей, советы по ментальному здоровью, и вопросы о том, стоит ли использовать ненормативную лексику — и когда.<br><br>На протяжении года другие комики добавляли свои советы, создавая живые беседы о ремесле, устройстве мышления и пути стендап комика.',
+    // Settings
+    settings_title: 'Настройки', settings_sub: 'Твои площадки — используются в выступлениях',
+    settings_theme: 'Тема', settings_theme_dark: 'Тёмная', settings_theme_pink: 'Розовая',
+    settings_reset_lbl: 'Сброс',
+    settings_lang: 'Язык',
+    settings_venue_ph: 'Название площадки...', settings_venue_added: 'Площадка добавлена',
+    settings_venue_saved: 'Сохранено', settings_venue_deleted: 'Площадка удалена',
+    settings_reset: 'Сбросить все данные', settings_reset_title: 'Удалить все данные?',
+    settings_reset_text: 'Шутки, площадки и история выступлений будут сброшены. Это нельзя отменить.',
+    settings_reset_done: 'Данные сброшены',
+    settings_creator: 'Создатель', creator_name: 'Саша Нижегородцев',
+    // Confirm modal
+    confirm_cancel: 'Отмена', confirm_delete: 'Удалить',
+    del_joke_title: 'Удалить шутку?', del_venue_title: 'Удалить площадку?',
+    // Setpicker
+    picker_title: 'Выбери шутки', picker_done: 'Готово',
+    picker_empty: 'Сначала добавь шутки во вкладке 🃏',
+    // Share
+    share_avg: 'средний балл', share_jokes: 'Шуток', share_bombed: 'Разъебал',
+    share_screenshot: 'Сделай скриншот чтобы сохранить', share_close: 'Закрыть',
+    // Calendar
+    cal_cancel: 'Отмена', cal_ok: 'OK',
+    // Aud options
+    aud0: 'Меньше 10', aud1: '10–20', aud2: '20–50', aud3: '50–200', aud4: 'Олимпийский',
+  },
+  en: {
+    nav_show: 'Show', nav_stats: 'Stats', nav_jokes: 'Jokes',
+    nav_history: 'History', nav_tips: 'Tips', nav_settings: 'Settings',
+    log_title: 'New Show', log_sub: 'Rate each joke after the gig',
+    log_venue: 'Venue', log_aud: 'Audience size', log_date: 'Date',
+    log_date_btn: 'Choose date', log_setlist: 'Tonight\'s setlist',
+    log_add: '+ Add', log_empty_set: 'Tap «+ Add» to pick jokes',
+    log_notes: 'Notes', log_notes_ph: 'Notes about the show...',
+    log_save: 'Save show', log_save_ok: '✓ Show saved',
+    log_rate_one: 'Rate at least one joke',
+    r0: 'Sucked', r1: 'Weak', r2: 'Ok', r3: 'Good', r4: 'Destroyed',
+    stats_title: 'Stats', stats_shows: 'Shows', stats_all: 'All shows',
+    stats_last3: 'Last 3', stats_jokes_lbl: 'Jokes', stats_filter_all: 'All venues',
+    stats_ranking: 'Joke rankings', stats_notes_lbl: 'Recent notes',
+    stats_no_data: 'No data for selected venue',
+    badge_hot: 'Hit', badge_ok: 'Ok', badge_cold: 'Weak',
+    checks: 'times',
+    trend_up: '↑ Growing', trend_dn: '↓ Dropping', trend_eq: '→ Stable',
+    trend_growing: 'Average score up', trend_vs: 'vs first 3 shows. You\'re improving!',
+    trend_falling: 'Average score down', trend_vs2: 'vs first 3 shows. Time to rethink the material.',
+    trend_stable: 'Score is stable. Try adding new material.',
+    jokes_title: 'Jokes', jokes_add_ph: 'Add a joke...', jokes_search_ph: '🔍 Search...',
+    jokes_empty: 'Add jokes above', jokes_no_data: 'No data — tap › to open',
+    jokes_added: 'Joke added', jokes_saved: 'Saved', jokes_deleted: 'Joke deleted',
+    detail_score: 'Score', detail_checks: 'Times', detail_trend: 'Trend',
+    detail_all: 'All', detail_history: 'History', detail_insights: 'Insights',
+    detail_no_data: 'No data',
+    insight_better: 'Better at', insight_vs: 'Avg', insight_vs2: 'vs',
+    insight_growing: 'Getting stronger', insight_growing_b: 'score went from',
+    insight_growing_c: 'Keep using it.',
+    insight_fading: 'Losing steam', insight_fading_b: 'Score dropped from',
+    insight_fading_c: 'Try rewriting the punchline.',
+    insight_stable: 'Consistent', insight_stable_b: 'Reliable material.',
+    insight_stable_c: 'Ceiling is low — consider rewriting.',
+    insight_more: 'Keep tracking', insight_more_b: 'Need more shows to see patterns.',
+    insight_no_data: 'No data', insight_no_data_b: 'Do at least one show with this joke.',
+    hist_title: 'History', hist_empty: 'No shows yet',
+    hist_score: 'Avg', hist_jokes_count: 'jokes',
+    hist_share: '📸 Share', hist_edit: '✏️ Edit',
+    hist_edit_ratings: 'Joke ratings', hist_save: 'Save',
+    hist_deleted: 'Show deleted',
+    hist_del_title: 'Delete show?',
+    tips_title: 'Tips', tips_btn: '🎲 Random tip',
+    tips_of: 'of', tips_tip: 'Tip',
+    tips_count: '13 tips added out of 366',
+    gulman_bio: 'On 1 January 2019, American comedian Gary Gulman, now 25 years in the business, started sharing writing tips on his Twitter feed. One masterclass-level comedy/life hack every single day. It started primarily for comedians, but also grew popular for being wildly helpful for those in affiliate spaces – writers, musicians and artists.<br><br>Filed under #GulmanTip, most of which insist you #WriteNow, Gulman has also seeded in organisational tips, hacks for when you\'re on the road, advice on mental health, and whether/not/when to use swear words.<br><br>Through the year, other comedians weighed in with guest tips of their own, creating delicious conversations about the craft, brain-wiring, and the journey from an open mic to your 300th+ show.',
+    settings_title: 'Settings', settings_sub: 'Your venues — used in shows',
+    settings_theme: 'Theme', settings_theme_dark: 'Dark', settings_theme_pink: 'Pink',
+    settings_reset_lbl: 'Reset',
+    settings_lang: 'Language',
+    settings_venue_ph: 'Venue name...', settings_venue_added: 'Venue added',
+    settings_venue_saved: 'Saved', settings_venue_deleted: 'Venue deleted',
+    settings_reset: 'Reset all data', settings_reset_title: 'Delete all data?',
+    settings_reset_text: 'Jokes, venues and show history will be reset. This cannot be undone.',
+    settings_reset_done: 'Data reset',
+    settings_creator: 'Creator', creator_name: 'Alex Nizhegorodtcev',
+    confirm_cancel: 'Cancel', confirm_delete: 'Delete',
+    del_joke_title: 'Delete joke?', del_venue_title: 'Delete venue?',
+    picker_title: 'Pick jokes', picker_done: 'Done',
+    picker_empty: 'Add jokes in the 🃏 tab first',
+    share_avg: 'avg score', share_jokes: 'Jokes', share_bombed: 'Destroyed',
+    share_screenshot: 'Screenshot to save', share_close: 'Close',
+    cal_cancel: 'Cancel', cal_ok: 'OK',
+    aud0: 'Under 10', aud1: '10–20', aud2: '20–50', aud3: '50–200', aud4: 'Madison Square Garden',
+  }
+};
+
+function t(key) { return I18N[lang][key] || I18N['ru'][key] || key; }
+
+function setLang(l) {
+  lang = l;
+  lsSet('sdc_lang', l);
+  document.getElementById('lang-ru').style.borderColor = l==='ru' ? 'var(--accent)' : 'transparent';
+  document.getElementById('lang-en').style.borderColor = l==='en' ? 'var(--accent)' : 'transparent';
+  if (tg) tg.HapticFeedback?.impactOccurred('light');
+  applyLang();
+}
+
+function applyLang() {
+  lang = lsGet('sdc_lang', 'ru');
+  // Nav labels
+  document.querySelectorAll('[data-screen]').forEach(el => {
+    const s = el.dataset.screen;
+    const map = {log:'nav_show',stats:'nav_stats',jokes:'nav_jokes',history:'nav_history',tips:'nav_tips',settings:'nav_settings'};
+    const lbl = el.querySelector('.nav-label');
+    if (lbl && map[s]) lbl.textContent = t(map[s]);
+  });
+  // Update lang buttons
+  document.getElementById('lang-ru').style.borderColor = lang==='ru' ? 'var(--accent)' : 'transparent';
+  document.getElementById('lang-en').style.borderColor = lang==='en' ? 'var(--accent)' : 'transparent';
+  // Update tips page
+  const tipsPageTitle = document.getElementById('tips-page-title');
+  if (tipsPageTitle) tipsPageTitle.textContent = t('tips_title');
+  const gulmanBio = document.getElementById('gulman-bio');
+  if (gulmanBio) gulmanBio.innerHTML = t('gulman_bio');
+  const tipsCount = document.getElementById('tips-count-lbl');
+  if (tipsCount) tipsCount.textContent = t('tips_count');
+  const tipsBtn = document.querySelector('[onclick="randomTip()"]');
+  if (tipsBtn) tipsBtn.textContent = t('tips_btn');
+  // Update calendar buttons
+  const calCancel = document.getElementById('cal-cancel-btn');
+  const calOk = document.getElementById('cal-ok-btn');
+  if (calCancel) calCancel.textContent = t('cal_cancel');
+  if (calOk) calOk.textContent = t('cal_ok');
+  // Update confirm modal buttons
+  const confirmCancel = document.querySelector('#confirm-overlay button:first-child');
+  if (confirmCancel) confirmCancel.textContent = t('confirm_cancel');
+  // Update settings
+  const settingsTitle = document.querySelector('#sc-settings .page-title');
+  if (settingsTitle) settingsTitle.textContent = t('settings_title');
+  const settingsSub = document.querySelector('#sc-settings .page-sub');
+  if (settingsSub) settingsSub.textContent = t('settings_sub');
+  const resetBtn = document.querySelector('[onclick="resetAll()"]');
+  if (resetBtn) resetBtn.textContent = t('settings_reset');
+  // Update creator
+  const creatorLbl = document.getElementById('creator-lbl');
+  const creatorName = document.getElementById('creator-name');
+  if (creatorLbl) creatorLbl.textContent = t('settings_creator');
+  if (creatorName) creatorName.textContent = t('creator_name');
+  // Update venue input placeholder
+  const venueInp = document.getElementById('new-venue-input');
+  if (venueInp) venueInp.placeholder = t('settings_venue_ph');
+  // Update joke search placeholder
+  const jSearch = document.getElementById('joke-search');
+  if (jSearch) jSearch.placeholder = t('jokes_search_ph');
+  // Update joke add placeholder
+  const jAdd = document.getElementById('new-joke-input');
+  if (jAdd) jAdd.placeholder = t('jokes_add_ph');
+  // Update setpicker done button
+  const pickerDone = document.querySelector('#setpicker-overlay button:last-child');
+  if (pickerDone) pickerDone.textContent = t('picker_done');
+  // Stats labels
+  const statsTitle = document.getElementById('stats-page-title');
+  if (statsTitle) statsTitle.textContent = t('stats_title');
+  const statsRanking = document.getElementById('stats-ranking-lbl');
+  if (statsRanking) statsRanking.textContent = t('stats_ranking');
+  // History and jokes titles
+  const histTitle = document.getElementById('hist-page-title');
+  if (histTitle) histTitle.textContent = t('hist_title');
+  const jokesTitle = document.querySelector('#sc-jokes .page-title');
+  if (jokesTitle) jokesTitle.textContent = t('jokes_title');
+  // Setlist labels
+  const setlistLbl = document.getElementById('setlist-lbl');
+  if (setlistLbl) setlistLbl.textContent = t('log_setlist');
+  const addJokesBtn = document.getElementById('add-jokes-btn');
+  if (addJokesBtn) addJokesBtn.textContent = t('log_add');
+  const emptySet = document.getElementById('log-empty-set');
+  if (emptySet) emptySet.textContent = t('log_empty_set');
+  // Theme and reset section labels
+  const themeLbl = document.getElementById('settings-theme-lbl');
+  if (themeLbl) themeLbl.textContent = t('settings_theme');
+  const resetLbl = document.getElementById('settings-reset-lbl');
+  if (resetLbl) resetLbl.textContent = t('settings_reset_lbl');
+  // Theme labels
+  const darkLbl = document.getElementById('theme-dark-lbl');
+  const pinkLbl = document.getElementById('theme-pink-lbl');
+  if (darkLbl) darkLbl.textContent = t('settings_theme_dark');
+  if (pinkLbl) pinkLbl.textContent = t('settings_theme_pink');
+  // Settings lang label
+  const langLbl = document.getElementById('lbl-lang');
+  if (langLbl) langLbl.textContent = t('settings_lang');
+  const active = document.querySelector('.screen.active');
+  if (active) {
+    const id = active.id.replace('sc-','');
+    if (id==='log') renderLog();
+    if (id==='stats') renderStats();
+    if (id==='jokes') renderJokesList();
+    if (id==='history') renderHistory();
+    if (id==='tips') renderTip(currentTipIdx);
+    if (id==='settings') renderVenues();
+  }
 }
 
 /* ── THEME ── */
