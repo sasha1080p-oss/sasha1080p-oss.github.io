@@ -415,7 +415,6 @@ body.theme-pink { background: var(--bg); }
       <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:14px 16px">
         <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px">#GulmanTip</div>
         <div style="font-size:12px;color:var(--text2);line-height:1.6" id="gulman-bio">1 января 2019 года американский комик Гэри Гулман, к тому моменту уже 25 лет в профессии, начал публиковать советы по написанию шуток в своём Twitter. Каждый день — один совет уровня мастер-класса по комедии и жизни. Изначально он писал для комиков, но постепенно его советы стали популярны и среди смежных специалистов — писателей, музыкантов и художников.<br><br>Советы выходили под хэштегом #GulmanTip и в большинстве своём призывали #ПишиСейчас. Гулман также затрагивал темы организации, лайфхаки для гастролей, советы по ментальному здоровью, и вопросы о том, стоит ли использовать ненормативную лексику — и когда.<br><br>На протяжении года другие комики добавляли свои советы, создавая живые беседы о ремесле, устройстве мышления и пути стендап комика.</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)" id="tips-count-lbl">В приложении добавлено 13 советов из 366</div>
       </div>
     </div>
 
@@ -951,15 +950,9 @@ function saveShow() {
   const venue = document.getElementById('l-venue').value;
   const aud = document.getElementById('l-aud').value;
   const dateVal = document.getElementById('l-date').value;
-  let date;
-  if (dateVal) {
-    const d = new Date(dateVal);
-    date = d.toLocaleDateString(lang==='en'?'en-GB':'ru-RU', {day:'numeric', month:'short', year:'numeric'});
-  } else {
-    date = new Date().toLocaleDateString(lang==='en'?'en-GB':'ru-RU', {day:'numeric', month:'short', year:'numeric'});
-  }
+  const dateISO = dateVal || new Date().toISOString().split('T')[0];
   const noteGood = document.getElementById('l-note-good').value.trim();
-  shows.push({ venue, aud, date, ratings:{...logRatings}, noteGood });
+  shows.push({ venue, aud, date: dateISO, ratings:{...logRatings}, noteGood });
   persist();
   if (tg) tg.HapticFeedback?.notificationOccurred('success');
   toast(t('log_save_ok'));
@@ -1221,7 +1214,7 @@ function _renderDetail() {
         <div style="width:20px;text-align:center;font-size:11px;color:var(--text3);flex-shrink:0">${idx+1}</div>
         <div class="show-info">
           <div class="show-venue">${h.venue}</div>
-          <div class="show-meta">${h.date} · ${translateAud(h.aud)}</div>
+          <div class="show-meta">${formatDate(h.date)} · ${translateAud(h.aud)}</div>
         </div>
         <span class="pill pill-${h.score}">${getRnames()[h.score]}</span>
       </div>`).join('') :
@@ -1426,6 +1419,15 @@ function screenshotHint() {
   document.getElementById('confirm-ok').style.background = 'var(--accent)';
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  // Handle both ISO (2026-05-09) and already-formatted strings
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+  if (!iso) return dateStr; // legacy already-formatted date
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString(lang==='en'?'en-GB':'ru-RU', {day:'numeric', month:'short', year:'numeric'});
+}
+
 function translateAud(aud) {
   const map = {
     'Меньше 10': {ru:'Меньше 10', en:'Under 10'},
@@ -1486,6 +1488,138 @@ const TIPS = [
   {
     ru: 'Прочти «Доверие к себе» Эмерсона ПРЯМО СЕЙЧАС! Уже прочитал? ЧИТАЙ СНОВА. Внутри золото. Пока это будет наименее популярный совет, но на самом деле это самый ценный совет.',
     en: 'Read Emerson\'s "Self Reliance" NOW! Already read it? READ IT AGAIN. There is gold within. It will be the least popular tip so far but it\'s actually the most valuable tip yet.',
+  },
+  {
+    ru: 'Лучшие знания, которые я когда-либо получал, были получены в двух шоу: почти вся работа придёт от других комиков. Будь хорошим коллегой. Не нарушай правила. Будь оригинальным. Будь поддерживающим. ПИШИ МНОГО! БУДЬ ДОБРЫМ!',
+    en: 'Best insight I ever got came two shows in: Nearly all of your work will come from other comedians. Be a good coworker. Don\'t run the light. Be original. Be supportive. WRITE A LOT! BE KIND!',
+  },
+  {
+    ru: 'Есть шутка, которую уже надоело рассказывать? Напиши её с пробелом между предложениями. Добавь детали, измени слово или распакуй идею. Для меня, если я не могу вставить её в спешл — она не готова. Когда аудитория произносит слова вместе с тобой — вот тогда она готова.',
+    en: 'You know that joke you\'re sick of telling? Write/type it with space between each sentence. Add some details, change a word or unpack an idea. Unless it\'s on a Special, a joke isn\'t done. When the audience is mouthing the words with you — it\'s done.',
+  },
+  {
+    ru: 'Будь тем комиком, которого ты хочешь видеть. Подумай о том, какие шутки ты хотел бы слышать, будучи зрителем. Составь список тем и идей, которые ты был бы рад услышать. Стань этим комиком. У тебя есть 30 лет.',
+    en: 'Be the comedian you wanted to see. Think about the things that you wished someone made jokes about when you sat in the audience. Make a list of topics and ideas that you\'d be EXCITED to see someone discuss. Become that comedian. You\'ve got 30 years.',
+  },
+  {
+    ru: 'Ты разъёбываешь каждый вечер. Тебе может казаться, что испытание позади. В течение следующих нескольких месяцев попроси быть первым на сцене. Это отличная проверка материала. Администратор и ведущий будут любить тебя за это. Когда я начинал, это называли «Принять пулю».',
+    en: 'You\'ve been killing every night. You\'re not sure this is still a challenge. For the next few months ask to go on first. It\'s a great test of your act. The booker and host will love you for it. When I started they called it "Taking the bullet".',
+  },
+  {
+    ru: 'Читай книги. Слушай аудиокниги. Тебе нужен огромный арсенал слов, чтобы писать интересные шутки. Если ты бомбардируешь мозг словами — это улучшит твоё письмо. Ты также узнаешь новые идеи, о которых можно написать. ОБРАЩАЙ ВНИМАНИЕ НА СЛОВА, КОТОРЫЕ ТЫ НЕ ЗНАЕШЬ.',
+    en: 'Read books. Listen to Audio Books. You need a huge inventory of words to write interesting jokes. If you bombard your brain with words it will improve your writing. You\'ll also learn new ideas and insights to write about. LOOK UP THE WORDS YOU DON\'T KNOW.',
+  },
+  {
+    ru: 'Используй разнообразие в словах. Не используй одно и то же слово постоянно. Если слово имеет решающее значение для панчлайна — старайся не использовать его раньше, это уменьшит эффект. Для этого и нужно прослушивать свои выступления.',
+    en: 'Use variety in your words. Don\'t keep using the same word. If you use a word that is crucial to your punchline you should try not to use it before then because it will diminish the impact. This is where listening to your sets is so helpful.',
+  },
+  {
+    ru: 'Сегодня постарайся устранить словесные тики. Все эти «и эээ...» после панчлайна, «что ещё...» когда забыл следующий бит. «Эмм...», «Знаете...» и запинки загрязняют ритм. Записывай и СЛУШАЙ свои выступления!',
+    en: 'Today, try to eliminate those verbal tics. The "and aaaahs" after the flat punchline, the "What else..." when you forget your next bit. The ahms, y\'knows and stammers that muddy your rhythm. Record and LISTEN to your set!',
+  },
+  {
+    ru: 'Я не могу доказать это, но верю, что молодые евреи стали увереннее в 1995. Это был год, когда Адам Сэндлер выпустил «The Chanukah Song». Комедия влиятельна. Комики могущественны. Думаете, это просто шутки?',
+    en: 'I could never prove it but I believe that young Jews started walking a bit taller in 1995. That was the year Adam Sandler released The Chanukah Song. Comedy is influential. Comedians are powerful. Just jokes???',
+  },
+  {
+    ru: 'Ты можешь учиться, наблюдая за другими комиками на шоу. Великие будут учить и вдохновлять, а недостатки плохих — поучительны. Ты можешь оценить зал и заметить заезженные предпосылки, чтобы избежать их. И предложить коллеге хорошую идею.',
+    en: 'You can learn by watching the other comics on your show. The great ones will teach and inspire and the bad ones\' shortcomings are instructive. You can assess the crowd and note overused premises to avoid. Also you may be able to offer a peer a good idea.',
+  },
+  {
+    ru: 'Тайминг. Одни говорят — «необходим», другие — «бесполезен». Можно жить с плохим таймингом, но взлететь — только с хорошим. Уйдут тысячи шоу, чтобы понять. ЭКСПЕРИМЕНТИРУЙ на каждом шоу. Когда-нибудь ты просто почувствуешь это.',
+    en: 'Timing. Some say it\'s "essential" others "useless". You can get by with lousy timing but you can soar with great timing. It can take thousands of shows to figure it out. EXPERIMENT every show to see what works best. Some day you\'ll just feel it.',
+  },
+  {
+    ru: 'Есть вещи, в которых ты стал экспертом благодаря своим увлечениям. Перечисли их и напиши шутки о них. Глубокие знания в необычных темах приводят к оригинальным и убедительным шуткам. @pattonoswalt — король этого. Сегодня раскопай свои самые странные увлечения.',
+    en: 'There are things you\'ve become expert in because of passion. List them and write jokes about them. Writing informed by vast knowledge in unusual subjects will lead to original compelling jokes. @pattonoswalt is King of this. Today, mine your obsessions.',
+  },
+  {
+    ru: 'Нет никакого стыда работать на обычной работе. Делай заметки. «Caddyshack» был вдохновлён воспоминаниями писателей о работе в чванливом гольф-клубе. Понимание своего опыта, перенесённое в шутку/ситком/сценарий — бесценно. Сегодня напиши о работе.',
+    en: 'There is no shame in working a day job. Take notes. Caddyshack was inspired by writers\' memories of working at a snooty golf club. The insight your experience will bring to a joke/sitcom/screenplay is priceless. Today write about a job.',
+  },
+  {
+    ru: 'Проведи инвентаризацию своих шуток. Выпиши их. Определи или создай логические связи между шутками и объедини их. Тебе будет легче удерживать внимание зала, когда ты дольше придерживаешься одной темы. Хорошего шоу сегодня вечером! Шаббат Шалом!',
+    en: 'Today go through your joke inventory. Write/type it out. Identify or create logical connections between jokes and combine them. It can be easier to hold a crowd\'s attention when you stay on topic longer. Have a good show tonight! Shabbat Shalom!',
+  },
+  {
+    ru: 'Кажется, что «я слишком стар, я занимаюсь этим так долго, я не могу стать лучше»? Джордж Карлин сказал, что по-настоящему понял всё в 1988. Ему был 51 год — и он уже был ДЖОРДЖ КАРЛИН!!! Не прекращай себя толкать вперёд.',
+    en: 'Feel like "I\'m too old. I\'ve been doing it so long. I can\'t get any better."? George Carlin said he really figured it out in 1988. He was 51 and at the time he was GEORGE CARLIN!!! Don\'t stop pushing yourself. You owe it to your audience and yourself.',
+  },
+  {
+    ru: 'Сегодня убери наушники на час и более. Дай себе время поразмышлять и погонять идеи. Если ты можешь придумывать шутки слушая музыку — завидую. Многим из нас тишина подходит лучше. Если тебе нужно отвлечься от беспокойства — понимаю.',
+    en: 'Today, remove your ear buds for an hour+. Take time to ruminate in your head and toss around ideas. If you can think out jokes while listening to music, I envy you. For a lot of us near silence is best. If you need the distraction for anxiety I get it.',
+  },
+  {
+    ru: 'Измени процедуру написания сегодня. Если обычно пишешь на ноутбуке — пиши от руки и наоборот. Если пишешь на стикерах — попробуй большой блокнот. Я, возможно, выдумал это, но думаю, что блокноты без полей изменили мой стиль написания несколько лет назад.',
+    en: 'Change your writing routine today. If you usually write on a laptop, write longhand and vice versa. If you write in small note pads write in a big notebook. I may be imagining it but I think using unruled note books changed my writing years ago.',
+  },
+  {
+    ru: 'Сегодня начни с просмотра своей писанины последних нескольких дней. Выдели части, которые нравятся, и организуй их — чтобы не забыть попробовать на сцене. Просмотри их перед шоу. Повторяй этот совет регулярно. Это важно!',
+    en: 'Today, start by going over your writing from the past few days. Highlight or mark the parts you like and organize them so you can remember to try them on stage. Review them before your show. Repeat this tip regularly. It\'s important!',
+  },
+  {
+    ru: 'Если не знаешь о чём писать сегодня — ты всегда можешь найти оригинальные шутки, изучая свою семью. Определи уникальные аспекты своей семьи. Это золотая жила, которую можно копать месяцами.',
+    en: 'If you\'re struggling to find an area to write about today, you can always find original jokes by examining your family. Identify the unique aspects of your family in writing. It\'s a rich vein you could mine through March and beyond.',
+  },
+  {
+    ru: 'Я слышал, это приписывали Лено и Сайнфелду: «Я никогда не беспокоился об агентах, сделках или прослушиваниях. Всё, о чём я думал — становлюсь ли я смешнее?» Игнорируй херню. Просто становись смешнее. Бог в помощь.',
+    en: 'I\'ve heard this attributed to both Leno and Seinfeld: "I never worried about agents or deals or auditions. All I worried about is: Am I getting funnier?" Ignore the bullshit. Just get funnier. Godspeed.',
+  },
+  {
+    ru: 'Мой любимый писатель Курт Воннегут сказал, что пишет лишь для одного человека — своей сестры Алисы. Я пишу для 21-летнего себя. Сегодня подумай о своём идеальном зрителе. Это поможет сузить фокус и найти свой голос.',
+    en: 'My favorite writer Kurt Vonnegut said he wrote for an audience of one, his sister Alice. I write for a 21 year old me. Today think about your ideal audience member. This should help you narrow your writing focus and help you find your voice.',
+  },
+  {
+    ru: 'Хочешь выделиться? Избегай заезженных тем. Ты знаешь, что это за темы. Никого никогда не обвиняли в том, что он слишком оригинальный.\n\nСмотри комиков до и после тебя. Темы, которые постоянно поднимаются — скорее всего уже перешучены. Вместо обвинений в краже — пиши на менее заезженные темы.',
+    en: 'Want to stand out? Avoid hacky topics. You know what they are. No one\'s ever been accused of being too original.\n\nWatch the comics before and after you. The topics that keep getting brought up are most likely hacky. Instead of accusing theft, write on a less pedestrian topic.',
+  },
+  {
+    ru: 'Сегодняшний совет — вызов. Февраль — самый короткий месяц. Я хочу, чтобы ты писал КАЖДЫЙ ДЕНЬ. Необязательно весь день. Но каждый день — или считай, что не выполнил. Сосредоточься. Очнись первого марта уже сильным комиком.',
+    en: 'Today\'s tip is a challenge. February is the shortest month. I want you to write EVERY SINGLE DAY. You don\'t have to write all day. You do have to write every day or be marked incomplete. Put your head down. Look up on March 1 a stronger comic.',
+  },
+  {
+    ru: 'Норм Макдональд — гость #GulmanTip:\n\nЧитайте великие литературные произведения вслух. Если не понимаете что читаете — остановитесь, разберитесь, повторите упражнение. Делайте это час в день, и со временем ваш собственный голос и мысли станут такими же, как у Толстого, Фолкнера, Твена.',
+    en: 'Norm Macdonald — guest #GulmanTip:\n\nRead great works of Literature out loud. If you do not understand what you are reading, stop, figure out what it means, then repeat the exercise. Do this an hour a day and in time, your own voice, your own thoughts will become the same as Tolstoy, Faulkner, Twain.',
+  },
+  {
+    ru: 'Выходи на улицу! Дома очень много что отвлекает и много чего хочется (в основном поспать). Дойди до кофейни, книжного магазина или сходи в библиотеку (моё любимое место) и начинай писать.',
+    en: 'Get out of the house! There are too many distractions and temptations (mostly to nap) in your home. Go to a coffee shop or book store or library (my favorite) and write.',
+  },
+  {
+    ru: 'У тебя есть новая шутка. Она кажется тебе довольно поверхностной. Поищи в интернете, говорил ли кто-нибудь что-то подобное. Спроси друзей, увлечённых комедией, слышали ли они у кого-то бит на эту тему.',
+    en: 'You have a new joke. It seems too easy. Go online and type in some of the joke and see if someone has said something similar ANYWHERE. Ask your comedy obsessed friends if they have heard anyone do a similar bit.',
+  },
+  {
+    ru: 'Послушай последнюю запись своего выступления. Я знаю, это мучительно и дальше не будет легче. Ставь паузу после каждого предложения или двух. 1) Можешь ли ты использовать меньше слов? 2) Можешь ли ты добавить или переделать что-то, чтобы стало смешнее? Повторяй до конца.',
+    en: 'Listen to a recent recording — I know it\'s excruciating and it won\'t get much easier. Pause every sentence or two. 1) Can you say it in less words? 2) Can you add or change something to make it funnier? Press play and repeat.',
+  },
+  {
+    ru: 'Если ты страдаешь от психического расстройства, убедись, что комедия помогает с ним справляться и ты чувствуешь себя лучше. Иначе бросай всё и проводи время с людьми. Если выступления делают ситуацию хуже — возьми передышку и поправь здоровье. Комедия подождёт.\n\nВ дополнение к терапии, группам поддержки и лекарствам справляться с депрессией и тревожностью мне помогает общение с друзьями.',
+    en: 'If you suffer from mental illness make sure comedy is helping you cope or feel better or get out of the house and be with people. If it\'s adding to your suffering, take a break and get healthy. Comedy can wait.\n\nIn addition to therapy and support groups and medication I have found being with friends very helpful in coping with my depression and anxiety.',
+  },
+  {
+    ru: 'Этот совет смогут принять не все. Многие из нас часто ленятся. Но физические упражнения, даже простая прогулка, подпитывают креативность. Постарайся не слушать музыку или подкасты. Если ты думаешь над выступлением — считай, что ты его пишешь.',
+    en: 'This one will meet with resistance. Many of us lean toward sloth but exercise, even just a long walk, fuels creativity. Try your best not to listen to music or podcasts. If you\'re ruminating on your act it counts as writing.',
+  },
+  {
+    ru: 'Выбери одну вещь, над которой будешь работать на каждом выходе. Поработай над новой шуткой, отыгрышем, персонажем, голосом и т.д. каждый раз, как выходишь на сцену. Это работает как для опытных, так и для новичков.',
+    en: 'Choose at least one thing to work on during every set. Work on a new joke, adding a physical component, a character or voice etc. every single time you take the stage. This helps at every level.',
+  },
+  {
+    ru: 'Как говорят в обществе анонимных алкоголиков: «Сравни и отчаешься». Сравнение себя с другими — это нормально для человеческой натуры, но лучше потратить время на чтение и написание. Просто порадуйся за тех, у кого всё получается. Окунись с головой в работу. Однажды ты станешь этим человеком.',
+    en: 'As they say in AA "Compare and despair." It\'s human nature but it\'s time better spent reading/writing. Be happy for the good guys/women/et al. Keep your head down and work. Some day it will be you.',
+  },
+  {
+    ru: 'Самый распространённый совет, который я даю новичкам в комедии: «Сделай так, чтобы выступление звучало как диалог». Я не до конца уверен, как к этому прийти, кроме варианта, когда текст звучит как бы не по сценарию. Ещё одна монета в копилку того, что надо слушать свои выступления.',
+    en: 'The most common advice I give new comedians is to "make it sound more conversational." I\'m not entirely certain how to go about that other than to make it a goal to sound less scripted. Yet another instance where listening to your set is helpful.',
+  },
+  {
+    ru: 'В начале карьеры комику очень сложно расположить к себе аудиторию. Полезно начать с лучшей шутки (чем короче, тем лучше) и закрыть второй по силе.',
+    en: 'Early on in your career it can be difficult to win over a crowd. It\'s very helpful to open with your best joke (the shorter the better) and close with your second best.',
+  },
+  {
+    ru: 'У тебя будут бесчисленные провалы, если ты будешь плотно заниматься комедией. Это нормально — взять день-другой, чтобы «залечить раны» после неудачи. Затем спроси себя: «Могу ли я работать усерднее?» Если ответ утвердительный — это был не провал, а напутствие.',
+    en: 'You will have countless setbacks if you stick with comedy. It\'s ok to take a day or two to lick your wounds after a rejection. Then, ask yourself: Can I be working harder? If yes then it\'s not a setback, it\'s a message.',
   },
   { beckett: true },
 ];
@@ -1569,7 +1703,7 @@ function shareShow(i) {
   ctx.fillText(s.venue, 80, 220);
   ctx.fillStyle = text2;
   ctx.font = '36px sans-serif';
-  ctx.fillText(s.date + ' · ' + translateAud(s.aud), 80, 276);
+  ctx.fillText(formatDate(s.date) + ' · ' + translateAud(s.aud), 80, 276);
 
   // Score card
   const sc = Object.values(s.ratings);
@@ -1707,7 +1841,7 @@ function renderHistory() {
     return `<div class="show-row" style="cursor:pointer" onclick="viewShow(${s.origIdx})">
       <div class="show-info">
         <div class="show-venue">${s.venue}</div>
-        <div class="show-meta">${s.date} · ${translateAud(s.aud)} · ${sc.length} ${t('hist_jokes_count')}</div>
+        <div class="show-meta">${formatDate(s.date)} · ${translateAud(s.aud)} · ${sc.length} ${t('hist_jokes_count')}</div>
         ${s.noteGood ? `<div style="font-size:11px;color:var(--text2);margin-top:3px">📝 ${s.noteGood}</div>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
@@ -1731,7 +1865,7 @@ function viewShow(i) {
         <div class="back-btn" onclick="renderHistory()" style="cursor:pointer">←</div>
         <div>
           <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${s.venue}</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px">${s.date} · ${translateAud(s.aud)}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${formatDate(s.date)} · ${translateAud(s.aud)}</div>
         </div>
       </div>
 
@@ -1772,7 +1906,7 @@ function editShow(i) {
     <div style="padding:0 0 16px">
       <div style="display:flex;align-items:center;gap:10px;padding:16px 0 12px">
         <div class="back-btn" onclick="viewShow(${i})" style="cursor:pointer">←</div>
-        <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${s.date} · ${s.venue}</div>
+        <div style="font-family:var(--font-head);font-size:15px;font-weight:700;color:var(--text)">${formatDate(s.date)} · ${s.venue}</div>
       </div>
       <div class="sec-label" style="margin-bottom:10px">${t('hist_edit_ratings')}</div>
       ${Object.keys(s.ratings).map(ji => `
@@ -1946,7 +2080,7 @@ const I18N = {
     // Tips
     tips_title: 'Советы', tips_btn: '🎲 Случайный совет',
     tips_of: 'из', tips_tip: 'Совет',
-    tips_count: 'В приложении добавлено 13 советов из 366',
+    tips_count: '',
     gulman_bio: '1 января 2019 года американский комик Гэри Гулман, к тому моменту уже 25 лет в профессии, начал публиковать советы по написанию шуток в своём Twitter. Каждый день — один совет уровня мастер-класса по комедии и жизни. Изначально он писал для комиков, но постепенно его советы стали популярны и среди смежных специалистов — писателей, музыкантов и художников.<br><br>Советы выходили под хэштегом #GulmanTip и в большинстве своём призывали #ПишиСейчас. Гулман также затрагивал темы организации, лайфхаки для гастролей, советы по ментальному здоровью, и вопросы о том, стоит ли использовать ненормативную лексику — и когда.<br><br>На протяжении года другие комики добавляли свои советы, создавая живые беседы о ремесле, устройстве мышления и пути стендап комика.',
     // Settings
     settings_title: 'Настройки', settings_sub: 'Твои площадки — используются в выступлениях',
@@ -2017,7 +2151,7 @@ const I18N = {
     hist_del_title: 'Delete show?',
     tips_title: 'Tips', tips_btn: '🎲 Random tip',
     tips_of: 'of', tips_tip: 'Tip',
-    tips_count: '13 tips added out of 366',
+    tips_count: '',
     gulman_bio: 'On 1 January 2019, American comedian Gary Gulman, now 25 years in the business, started sharing writing tips on his Twitter feed. One masterclass-level comedy/life hack every single day. It started primarily for comedians, but also grew popular for being wildly helpful for those in affiliate spaces – writers, musicians and artists.<br><br>Filed under #GulmanTip, most of which insist you #WriteNow, Gulman has also seeded in organisational tips, hacks for when you\'re on the road, advice on mental health, and whether/not/when to use swear words.<br><br>Through the year, other comedians weighed in with guest tips of their own, creating delicious conversations about the craft, brain-wiring, and the journey from an open mic to your 300th+ show.',
     settings_title: 'Settings', settings_sub: 'Your venues — used in shows',
     settings_theme: 'Theme', settings_theme_dark: 'Dark', settings_theme_pink: 'Pink',
