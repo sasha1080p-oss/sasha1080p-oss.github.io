@@ -573,8 +573,61 @@ function getSeedVenues() { return lang==='en' ? SEED_VENUES_EN.slice() : SEED_VE
 const SEED_JOKES = SEED_JOKES_RU;
 const SEED_VENUES = SEED_VENUES_RU;
 
+/* ── Supabase ── */
+const SUPABASE_URL = 'https://hctkelqzqzryzfhfwlab.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhjdGtlbHF6cXpyeXpmaGZ3bGFiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg0NTgzNDMsImV4cCI6MjA5NDAzNDM0M30.AnLel1OjeWUI_DYlyJjIIyc1YuT7CUoMDxNZATgXAlI';
+
+let telegramId = null;
+
+function sbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'x-telegram-id': String(telegramId),
+  };
+}
+
+async function sbGet(table, filter = '') {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}&order=created_at.asc`, {
+      headers: sbHeaders()
+    });
+    return res.ok ? await res.json() : [];
+  } catch { return []; }
+}
+
+async function sbUpsert(table, data) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify(data)
+    });
+  } catch {}
+}
+
+async function sbDelete(table, filter) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}`, {
+      method: 'DELETE',
+      headers: sbHeaders()
+    });
+  } catch {}
+}
+
+async function sbRpc(fn, params) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: sbHeaders(),
+      body: JSON.stringify(params)
+    });
+    return res.ok ? await res.json() : null;
+  } catch { return null; }
+}
+
 /* ── Storage ── */
-const CS = tg?.CloudStorage;
 let jokes = [], shows = [], venues = [];
 let storageReady = false;
 
@@ -584,30 +637,60 @@ function lsGet(k, def) {
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 
 async function loadData() {
-  // Всегда сначала грузим из localStorage — он надёжнее
-  jokes = lsGet('sdc_jokes', null);
-  shows = lsGet('sdc_shows', null);
-  venues = lsGet('sdc_venues', null);
+  // Get Telegram user ID
+  telegramId = tg?.initDataUnsafe?.user?.id || lsGet('sdc_tg_id', null);
 
-  // Если в localStorage пусто — пробуем CloudStorage
-  if ((!jokes || !shows || !venues) && CS) {
-    await new Promise(res => {
-      CS.getItems(['jokes','shows','venues'], (err, vals) => {
-        if (!err && vals) {
-          try { if (vals.jokes) jokes = JSON.parse(vals.jokes); } catch {}
-          try { if (vals.shows) shows = JSON.parse(vals.shows); } catch {}
-          try { if (vals.venues) venues = JSON.parse(vals.venues); } catch {}
-        }
-        res();
-      });
-    });
+  // If no Telegram ID (browser testing) — use localStorage only
+  if (!telegramId) {
+    jokes = lsGet('sdc_jokes', null);
+    shows = lsGet('sdc_shows', null);
+    venues = lsGet('sdc_venues', null);
+  } else {
+    lsSet('sdc_tg_id', telegramId);
+
+    // Load from Supabase
+    try {
+      // Ensure user exists
+      await sbUpsert('users', { telegram_id: telegramId });
+
+      // Load jokes
+      const jRows = await sbGet('jokes', `telegram_id=eq.${telegramId}`);
+      jokes = jRows.length ? jRows.map(r => r.name) : null;
+
+      // Load venues
+      const vRows = await sbGet('venues', `telegram_id=eq.${telegramId}`);
+      venues = vRows.length ? vRows.map(r => r.name) : null;
+
+      // Load shows with ratings
+      const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
+      if (sRows.length) {
+        const rRows = await sbGet('ratings', `show_id=in.(${sRows.map(s=>s.id).join(',')})`);
+        shows = sRows.map(s => ({
+          id: s.id,
+          venue: s.venue,
+          aud: s.aud,
+          date: s.date,
+          noteGood: s.note || '',
+          ratings: Object.fromEntries(
+            rRows.filter(r => r.show_id === s.id).map(r => [r.joke_index, r.score])
+          )
+        }));
+      } else {
+        shows = [];
+      }
+    } catch(e) {
+      console.error('Supabase load error:', e);
+      // Fallback to localStorage
+      jokes = lsGet('sdc_jokes', null);
+      shows = lsGet('sdc_shows', null);
+      venues = lsGet('sdc_venues', null);
+    }
   }
 
-  // Если всё ещё пусто — seed данные
-  if (!jokes || !jokes.length) jokes = getSeedJokes();
-  if (!shows) shows = SEED_SHOWS.slice();
-  if (!venues || !venues.length) venues = getSeedVenues();
   lang = lsGet('sdc_lang', 'ru');
+  if (!jokes || !jokes.length) jokes = getSeedJokes();
+  if (!shows) shows = [];
+  if (!venues || !venues.length) venues = getSeedVenues();
 
   storageReady = true;
   applyTheme();
@@ -615,17 +698,90 @@ async function loadData() {
   renderLog();
 }
 
-function persist() {
-  // Сохраняем в оба хранилища
+async function persist() {
+  // Always save to localStorage as backup
   lsSet('sdc_jokes', jokes);
   lsSet('sdc_shows', shows);
   lsSet('sdc_venues', venues);
-  if (CS) {
-    try {
-      CS.setItems({ jokes: JSON.stringify(jokes), shows: JSON.stringify(shows), venues: JSON.stringify(venues) });
-    } catch {}
+
+  if (!telegramId) return;
+
+  try {
+    // Save jokes
+    await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
+    if (jokes.length) {
+      await sbUpsert('jokes', jokes.map((name, i) => ({
+        telegram_id: telegramId,
+        name,
+        position: i
+      })));
+    }
+
+    // Save venues
+    await sbDelete('venues', `telegram_id=eq.${telegramId}`);
+    if (venues.length) {
+      await sbUpsert('venues', venues.map(name => ({
+        telegram_id: telegramId,
+        name
+      })));
+    }
+
+    // Save shows (only new ones without id)
+    const newShows = shows.filter(s => !s.id);
+    for (const s of newShows) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/shows`, {
+        method: 'POST',
+        headers: { ...sbHeaders(), 'Prefer': 'return=representation' },
+        body: JSON.stringify({
+          telegram_id: telegramId,
+          venue: s.venue,
+          aud: s.aud,
+          date: s.date,
+          note: s.noteGood || ''
+        })
+      });
+      if (res.ok) {
+        const [row] = await res.json();
+        s.id = row.id;
+        // Save ratings
+        const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
+          show_id: row.id,
+          joke_index: parseInt(ji),
+          joke_name: jokes[ji] || '',
+          score
+        }));
+        if (ratingRows.length) await sbUpsert('ratings', ratingRows);
+      }
+    }
+
+    // Update existing shows (notes/ratings changed)
+    const existingShows = shows.filter(s => s.id);
+    for (const s of existingShows) {
+      await fetch(`${SUPABASE_URL}/rest/v1/shows?id=eq.${s.id}`, {
+        method: 'PATCH',
+        headers: sbHeaders(),
+        body: JSON.stringify({ note: s.noteGood || '' })
+      });
+      // Update ratings
+      await sbDelete('ratings', `show_id=eq.${s.id}`);
+      const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
+        show_id: s.id,
+        joke_index: parseInt(ji),
+        joke_name: jokes[ji] || '',
+        score
+      }));
+      if (ratingRows.length) await sbUpsert('ratings', ratingRows);
+    }
+
+    // Delete removed shows
+    const existingIds = shows.filter(s => s.id).map(s => s.id);
+    // (handled by cascade delete when show is removed)
+
+  } catch(e) {
+    console.error('Supabase persist error:', e);
   }
 }
+
 
 /* ── Helpers ── */
 function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
