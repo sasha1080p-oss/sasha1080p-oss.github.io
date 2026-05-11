@@ -1330,14 +1330,17 @@ function startEdit(i) {
   nameEl.onclick = null;
   nameEl.style.cursor = 'default';
   const current = jokes[i];
-  nameEl.innerHTML = `<input id="edit-inp-${i}" value="${current.replace(/"/g,'&quot;')}"
-    style="background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)"
-    onkeydown="if(event.key==='Enter')saveEdit(${i});if(event.key==='Escape')renderJokesList()">
-    <div style="display:flex;gap:6px;margin-top:6px">
-      <button onclick="saveEdit(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">${t('btn_save')}</button>
-      <button onclick="renderJokesList()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">${t('btn_cancel')}</button>
-    </div>`;
-  setTimeout(() => {
+  const inp1 = document.createElement('input');
+  inp1.id = 'edit-inp-' + i;
+  inp1.value = current;
+  inp1.style.cssText = 'background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)';
+  inp1.onkeydown = (e) => { if(e.key==='Enter') saveEdit(i); if(e.key==='Escape') renderJokesList(); };
+  const btns1 = document.createElement('div');
+  btns1.style.cssText = 'display:flex;gap:6px;margin-top:6px';
+  btns1.innerHTML = '<button onclick="saveEdit(' + i + ')" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">' + t('btn_save') + '</button><button onclick="renderJokesList()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">' + t('btn_cancel') + '</button>';
+  nameEl.innerHTML = '';
+  nameEl.appendChild(inp1);
+  nameEl.appendChild(btns1);  setTimeout(() => {
     const inp = document.getElementById('edit-inp-'+i);
     if (inp) {
       inp.focus();
@@ -1404,7 +1407,7 @@ function _renderDetail() {
   const trendText = trend===null?'—':trend>0?t('trend_up'):trend<0?t('trend_dn'):t('trend_eq');
   const trendColor = trend===null||trend===0?'var(--text3)':trend>0?'var(--accent)':'var(--red)';
   document.getElementById('d-metrics').innerHTML = `
-    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('detail_score'}</div></div>
+    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('detail_score')}</div></div>
     <div class="metric"><div class="metric-val">${filtH.length}</div><div class="metric-lbl">${t('detail_checks')}</div></div>
     <div class="metric"><div class="metric-val" style="font-size:14px;color:${trendColor}">${trendText}</div><div class="metric-lbl">${t('detail_trend')}</div></div>`;
 
@@ -1525,14 +1528,17 @@ function addVenue() {
 function startEditVenue(i) {
   const nameEl = document.getElementById('vname-'+i);
   const current = venues[i];
-  nameEl.innerHTML = `<input id="vedit-${i}" value="${current.replace(/"/g,'&quot;')}"
-    style="background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)"
-    onkeydown="if(event.key==='Enter')saveEditVenue(${i});if(event.key==='Escape')renderVenues()">
-    <div style="display:flex;gap:6px;margin-top:6px">
-      <button onclick="saveEditVenue(${i})" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">${t('btn_save')}</button>
-      <button onclick="renderVenues()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">${t('btn_cancel')}</button>
-    </div>`;
-  setTimeout(() => {
+  const inp2 = document.createElement('input');
+  inp2.id = 'vedit-' + i;
+  inp2.value = current;
+  inp2.style.cssText = 'background:var(--bg3);border:1px solid var(--accent);border-radius:6px;padding:5px 8px;font-size:13px;color:var(--text);width:100%;font-family:var(--font-body)';
+  inp2.onkeydown = (e) => { if(e.key==='Enter') saveEditVenue(i); if(e.key==='Escape') renderVenues(); };
+  const btns2 = document.createElement('div');
+  btns2.style.cssText = 'display:flex;gap:6px;margin-top:6px';
+  btns2.innerHTML = '<button onclick="saveEditVenue(' + i + ')" style="background:var(--accent);color:#000;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer">' + t('btn_save') + '</button><button onclick="renderVenues()" style="background:var(--bg3);color:var(--text2);border:none;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">' + t('btn_cancel') + '</button>';
+  nameEl.innerHTML = '';
+  nameEl.appendChild(inp2);
+  nameEl.appendChild(btns2);  setTimeout(() => {
     const inp = document.getElementById('vedit-'+i);
     if (inp) {
       inp.focus();
@@ -2136,7 +2142,7 @@ function viewShow(i) {
       </div>
 
       <div class="metrics" style="margin-bottom:14px">
-        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('hist_score'}</div></div>
+        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('hist_score')}</div></div>
         <div class="metric"><div class="metric-val">${sc.length}</div><div class="metric-lbl">${t('share_jokes')}</div></div>
         <div class="metric"><div class="metric-val">${sc.filter(v=>v===4).length}</div><div class="metric-lbl">${t('share_bombed')}</div></div>
       </div>
