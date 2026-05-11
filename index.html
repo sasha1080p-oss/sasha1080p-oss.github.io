@@ -471,6 +471,7 @@ body.theme-pink { background: var(--bg); }
         <div style="font-size:12px;color:var(--text2)" id="debug-tgid">TG ID: загрузка...</div>
         <div style="font-size:12px;color:var(--text2);margin-top:4px" id="debug-shows">Shows: —</div>
         <button onclick="debugSync()" style="margin-top:8px;padding:6px 12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;cursor:pointer">Sync now</button>
+        <button onclick="forceReloadFromSupabase()" style="margin-top:8px;margin-left:8px;padding:6px 12px;background:rgba(255,69,69,0.1);border:0.5px solid var(--red);color:var(--red);border-radius:8px;font-size:12px;cursor:pointer">Force reload</button>
       </div>
 
       <div style="margin-top:32px;text-align:center;padding-bottom:8px">
@@ -700,7 +701,7 @@ async function loadData() {
         }
       }
     } catch(e) {
-      console.error('Supabase load error:', e);
+      console.error('Supabase load error:', e); lsSet('sdc_last_error', e.message);
       // Network/auth failure — fall back to localStorage entirely
       jokes  = lsGet('sdc_jokes',  null);
       shows  = lsGet('sdc_shows',  null);
@@ -1466,7 +1467,7 @@ function renderVenues() {
   const idEl = document.getElementById('debug-tgid');
   const showsEl = document.getElementById('debug-shows');
   if (idEl) idEl.textContent = `TG ID: ${telegramId || 'НЕТ'}`;
-  if (showsEl) showsEl.textContent = `Local shows: ${shows.length}`;
+  const lastErr = lsGet('sdc_last_error', null); if (showsEl) showsEl.innerHTML = `Local: ${shows.length}${lastErr ? ' · ERR: ' + lastErr : ''}`;
   const el = document.getElementById('venue-cards');
   if (!venues.length) {
     el.innerHTML = '<div class="empty"><div class="empty-text">Добавь первую площадку</div></div>';
@@ -1627,6 +1628,18 @@ function translateAud(aud) {
   };
   return map[aud]?.[lang] || aud;
 }
+async function forceReloadFromSupabase() {
+  // Clear local cache and reload everything from Supabase
+  lsSet('sdc_last_error', null);
+  localStorage.removeItem('sdc_shows');
+  localStorage.removeItem('sdc_jokes');
+  localStorage.removeItem('sdc_venues');
+  toast('Загружаю из Supabase...');
+  await loadData();
+  renderVenues();
+  toast('Готово!');
+}
+
 async function debugSync() {
   const idEl    = document.getElementById('debug-tgid');
   const showsEl = document.getElementById('debug-shows');
