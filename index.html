@@ -605,13 +605,15 @@ async function sbGet(table, filter = '') {
 }
 
 async function sbUpsert(table, data) {
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-      method: 'POST',
-      headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify(data)
-    });
-  } catch {}
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`sbUpsert ${table} failed: ${res.status} ${err}`);
+  }
 }
 
 async function sbDelete(table, filter) {
@@ -815,6 +817,7 @@ async function persist() {
 
   } catch(e) {
     console.error('Supabase persist error:', e);
+    lsSet('sdc_last_error', 'persist: ' + e.message);
     // LS уже сохранён выше — данные в безопасности
   }
 }
@@ -1546,15 +1549,30 @@ function deleteVenue(i) {
 }
 
 function resetAll() {
-  showConfirm(t('settings_reset_title'), t('settings_reset_text'), () => {
+  showConfirm(t('settings_reset_title'), t('settings_reset_text'), async () => {
     jokes = getSeedJokes();
     shows = SEED_SHOWS.slice();
     venues = getSeedVenues();
-    persist();
+    // Сохраняем локально
+    lsSet('sdc_jokes', jokes);
+    lsSet('sdc_shows', shows);
+    lsSet('sdc_venues', venues);
+    // Удаляем всё из Supabase напрямую (минуя защиту persist)
+    if (telegramId) {
+      try {
+        await sbDelete('shows', `telegram_id=eq.${telegramId}`);
+        await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
+        await sbDelete('venues', `telegram_id=eq.${telegramId}`);
+        // Записываем дефолтные шутки и площадки
+        await sbUpsert('jokes', jokes.map((name, i) => ({ telegram_id: telegramId, name, position: i })));
+        await sbUpsert('venues', venues.map(name => ({ telegram_id: telegramId, name })));
+      } catch(e) { console.error('Reset Supabase error:', e); }
+    }
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
     toast(t('settings_reset_done'));
     renderVenues();
     renderLog();
+    renderStats();
   });
 }
 
