@@ -596,12 +596,11 @@ function sbHeaders() {
 }
 
 async function sbGet(table, filter = '') {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}&order=created_at.asc`, {
-      headers: sbHeaders()
-    });
-    return res.ok ? await res.json() : [];
-  } catch { return []; }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}&order=created_at.asc`, {
+    headers: sbHeaders()
+  });
+  if (!res.ok) throw new Error(`sbGet ${table} failed: ${res.status}`);
+  return await res.json();
 }
 
 async function sbUpsert(table, data) {
@@ -645,30 +644,30 @@ function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch
 
 async function loadData() {
   // Get Telegram user ID
-  telegramId = tg?.initDataUnsafe?.user?.id || lsGet('sdc_tg_id', null);
+  telegramId = tg?.initDataUnsafe?.user?.id || null;
+  if (!telegramId) telegramId = lsGet('sdc_tg_id', null);
 
   // If no Telegram ID (browser testing) — use localStorage only
   if (!telegramId) {
-    jokes = lsGet('sdc_jokes', null);
-    shows = lsGet('sdc_shows', null);
+    jokes  = lsGet('sdc_jokes',  null);
+    shows  = lsGet('sdc_shows',  null);
     venues = lsGet('sdc_venues', null);
   } else {
     lsSet('sdc_tg_id', telegramId);
 
-    // Load from Supabase
     try {
       // Ensure user exists
       await sbUpsert('users', { telegram_id: telegramId });
 
-      // Load jokes
+      // Load jokes — fall back to localStorage if Supabase is empty
       const jRows = await sbGet('jokes', `telegram_id=eq.${telegramId}`);
-      jokes = jRows.length ? jRows.map(r => r.name) : null;
+      jokes = jRows.length ? jRows.map(r => r.name) : lsGet('sdc_jokes', null);
 
-      // Load venues
+      // Load venues — fall back to localStorage if Supabase is empty
       const vRows = await sbGet('venues', `telegram_id=eq.${telegramId}`);
-      venues = vRows.length ? vRows.map(r => r.name) : null;
+      venues = vRows.length ? vRows.map(r => r.name) : lsGet('sdc_venues', null);
 
-      // Load shows with ratings
+      // Load shows with ratings — fall back to localStorage if Supabase is empty
       const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
       if (sRows.length) {
         const showIds = sRows.map(s => s.id);
@@ -689,20 +688,30 @@ async function loadData() {
           )
         }));
       } else {
-        shows = [];
+        // Supabase empty — trust localStorage, and re-sync it up to Supabase
+        const lsShows = lsGet('sdc_shows', null);
+        if (lsShows && lsShows.length) {
+          shows = lsShows.map(s => ({ ...s, id: s.id || null }));
+          // Strip IDs so persist() will re-insert them (IDs from a previous install may be stale)
+          shows = shows.map(s => ({ ...s, id: undefined }));
+          // Immediately persist so Supabase is populated
+          setTimeout(() => persist(), 0);
+        } else {
+          shows = [];
+        }
       }
     } catch(e) {
       console.error('Supabase load error:', e);
-      // Fallback to localStorage
-      jokes = lsGet('sdc_jokes', null);
-      shows = lsGet('sdc_shows', null);
+      // Network/auth failure — fall back to localStorage entirely
+      jokes  = lsGet('sdc_jokes',  null);
+      shows  = lsGet('sdc_shows',  null);
       venues = lsGet('sdc_venues', null);
     }
   }
 
   lang = lsGet('sdc_lang', 'ru');
-  if (!jokes || !jokes.length) jokes = getSeedJokes();
-  if (!shows) shows = [];
+  if (!jokes  || !jokes.length)  jokes  = getSeedJokes();
+  if (!shows)                     shows  = [];
   if (!venues || !venues.length) venues = getSeedVenues();
 
   storageReady = true;
@@ -712,15 +721,15 @@ async function loadData() {
 }
 
 async function persist() {
-  // Always save to localStorage as backup
-  lsSet('sdc_jokes', jokes);
-  lsSet('sdc_shows', shows);
+  // Always save to localStorage as backup FIRST
+  lsSet('sdc_jokes',  jokes);
+  lsSet('sdc_shows',  shows);
   lsSet('sdc_venues', venues);
 
   if (!telegramId) return;
 
   try {
-    // Save jokes
+    // ── Save jokes ──
     await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
     if (jokes.length) {
       await sbUpsert('jokes', jokes.map((name, i) => ({
@@ -730,7 +739,7 @@ async function persist() {
       })));
     }
 
-    // Save venues
+    // ── Save venues ──
     await sbDelete('venues', `telegram_id=eq.${telegramId}`);
     if (venues.length) {
       await sbUpsert('venues', venues.map(name => ({
@@ -739,7 +748,8 @@ async function persist() {
       })));
     }
 
-    // Save shows (only new ones without id)
+    // ── Save shows ──
+    // Insert shows that have no Supabase id yet
     const newShows = shows.filter(s => !s.id);
     for (const s of newShows) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/shows`, {
@@ -756,7 +766,7 @@ async function persist() {
       if (res.ok) {
         const [row] = await res.json();
         s.id = row.id;
-        // Save ratings
+        // Save ratings for this show
         const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
           show_id: row.id,
           joke_index: parseInt(ji),
@@ -764,10 +774,12 @@ async function persist() {
           score
         }));
         if (ratingRows.length) await sbUpsert('ratings', ratingRows);
+      } else {
+        console.error('Failed to insert show:', await res.text());
       }
     }
 
-    // Update existing shows (notes/ratings changed)
+    // Update existing shows (notes + ratings)
     const existingShows = shows.filter(s => s.id);
     for (const s of existingShows) {
       await fetch(`${SUPABASE_URL}/rest/v1/shows?id=eq.${s.id}`, {
@@ -775,7 +787,7 @@ async function persist() {
         headers: sbHeaders(),
         body: JSON.stringify({ note: s.noteGood || '' })
       });
-      // Update ratings
+      // Re-sync ratings: delete all and re-insert
       await sbDelete('ratings', `show_id=eq.${s.id}`);
       const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
         show_id: s.id,
@@ -786,12 +798,15 @@ async function persist() {
       if (ratingRows.length) await sbUpsert('ratings', ratingRows);
     }
 
-    // Delete removed shows
-    const existingIds = shows.filter(s => s.id).map(s => s.id);
-    // (handled by cascade delete when show is removed)
+    // Delete shows removed locally (those that had an id but are no longer in shows[])
+    // (cascade delete on ratings is handled by DB foreign key — ensure it's set in Supabase)
+
+    // Re-save LS with updated ids (new shows now have ids from Supabase)
+    lsSet('sdc_shows', shows);
 
   } catch(e) {
     console.error('Supabase persist error:', e);
+    // LS is already saved above — data is safe locally
   }
 }
 
@@ -1614,22 +1629,24 @@ function translateAud(aud) {
   return map[aud]?.[lang] || aud;
 }
 async function debugSync() {
-  const idEl = document.getElementById('debug-tgid');
+  const idEl    = document.getElementById('debug-tgid');
   const showsEl = document.getElementById('debug-shows');
   idEl.textContent = `TG ID: ${telegramId || 'НЕТ'}`;
   if (!telegramId) {
     showsEl.textContent = 'Нет ID — синхронизация недоступна';
     return;
   }
+  showsEl.textContent = 'Синхронизация...';
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/shows?telegram_id=eq.${telegramId}&select=id,venue,date`, {
-      headers: sbHeaders()
-    });
-    const rows = await res.json();
-    showsEl.textContent = `Supabase shows: ${rows.length}`;
-    toast(`ID: ${telegramId} | Shows в базе: ${rows.length}`);
+    // Push everything local up to Supabase
+    await persist();
+    // Then read back from Supabase to verify
+    const rows = await sbGet('shows', `telegram_id=eq.${telegramId}&select=id,venue,date`);
+    showsEl.textContent = `Local: ${shows.length} | Supabase: ${rows.length}`;
+    toast(`Sync OK · ${rows.length} шоу в базе`);
   } catch(e) {
     showsEl.textContent = `Ошибка: ${e.message}`;
+    toast('Ошибка синхронизации');
   }
 }
 
@@ -2132,9 +2149,17 @@ function saveEditShow(i) {
 }
 
 function deleteShow(i) {
-  showConfirm(t('hist_del_title'), `${shows[i].date} · ${shows[i].venue}`, () => {
+  showConfirm(t('hist_del_title'), `${shows[i].date} · ${shows[i].venue}`, async () => {
+    const removed = shows[i];
     shows.splice(i, 1);
-    persist();
+    // Delete from Supabase if it has an id (cascade will remove ratings too)
+    if (removed.id && telegramId) {
+      try {
+        await sbDelete('shows', `id=eq.${removed.id}`);
+      } catch(e) { console.error('deleteShow Supabase error:', e); }
+    }
+    // Always update localStorage
+    lsSet('sdc_shows', shows);
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
     toast(t('hist_deleted'));
     renderHistory();
