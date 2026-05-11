@@ -832,6 +832,9 @@ async function persist() {
 
 /* ── Helpers ── */
 function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+// Конвертация внутренней оценки (0-4) в отображаемую (1-5)
+function toDisplay(score) { return score + 1; }
+function avgDisplay(arr) { return arr.length ? toDisplay(avg(arr)) : 0; }
 function barColor(a) { return a>=3.5?'#c8ff00':a>=2.5?'#ffaa00':'#ff4545'; }
 function scClass(a) { return a>=3.5?'sc-high':a>=2.5?'sc-mid':'sc-low'; }
 
@@ -1178,8 +1181,8 @@ function renderStats() {
 
   document.getElementById('st-metrics').innerHTML = `
     <div class="metric"><div class="metric-val">${fs.length}</div><div class="metric-lbl">${t('stats_shows')}</div></div>
-    <div class="metric"><div class="metric-val">${allSc.length?ga.toFixed(1):'—'}</div><div class="metric-lbl">${t('stats_all')}</div></div>
-    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?last5Avg.toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">${t('stats_last3')}</div></div>`;
+    <div class="metric"><div class="metric-val">${allSc.length?toDisplay(ga).toFixed(1):'—'}</div><div class="metric-lbl">${t('stats_all')}</div></div>
+    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?toDisplay(last5Avg).toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">${t('stats_last3')}</div></div>`;
 
   if (fs.length >= 3) {
     const showAvgs = fs.map(s => {
@@ -1229,7 +1232,7 @@ function renderStats() {
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(r.a)}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px">
             <span style="font-size:11px;color:var(--text3)">${r.cnt} ${t('checks')}</span>
-            <span style="font-size:12px;color:var(--text2)">${r.a.toFixed(1)} / 4</span>
+            <span style="font-size:12px;color:var(--text2)">${toDisplay(r.a).toFixed(1)} / 5</span>
           </div>
         </div>
       </div>
@@ -1288,7 +1291,7 @@ function renderJokesList() {
           <div class="bar-track"><div class="bar-fill" style="width:${Math.round((a/4)*100)}%;background:${barColor(a)}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px">
             ${trendEl}<span style="font-size:11px;color:var(--text3)">${sc.length} пров.</span>
-            <span style="font-size:12px;color:var(--text2)">${a.toFixed(1)}/4</span>
+            <span style="font-size:12px;color:var(--text2)">${toDisplay(a).toFixed(1)}/5</span>
           </div>
         </div>`:`<div class="joke-row-sub">${t('jokes_no_data')}</div>`}
       </div>
@@ -1401,7 +1404,7 @@ function _renderDetail() {
   const trendText = trend===null?'—':trend>0?t('trend_up'):trend<0?t('trend_dn'):t('trend_eq');
   const trendColor = trend===null||trend===0?'var(--text3)':trend>0?'var(--accent)':'var(--red)';
   document.getElementById('d-metrics').innerHTML = `
-    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">${t('detail_score')}</div></div>
+    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('detail_score'}</div></div>
     <div class="metric"><div class="metric-val">${filtH.length}</div><div class="metric-lbl">${t('detail_checks')}</div></div>
     <div class="metric"><div class="metric-val" style="font-size:14px;color:${trendColor}">${trendText}</div><div class="metric-lbl">${t('detail_trend')}</div></div>`;
 
@@ -1455,7 +1458,7 @@ function _drawChart(hist) {
       responsive:true,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+getRnames()[ctx.raw]}}},
       scales:{
-        y:{min:0,max:4,ticks:{stepSize:1,color:'#555',callback:v=>getRnames()[v]||''},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{min:0,max:4,ticks:{stepSize:1,color:'#555',callback:v=>getRnames()[v]?`${v+1}. ${getRnames()[v]}`:''},grid:{color:'rgba(255,255,255,0.05)'}},
         x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}}
       }
     }
@@ -1469,14 +1472,14 @@ function buildInsights(ji, hist) {
   hist.forEach(h=>{ if(!byV[h.venue])byV[h.venue]=[]; byV[h.venue].push(h.score); });
   const va = Object.entries(byV).map(([v,sc])=>({v,a:avg(sc)})).sort((a,b)=>b.a-a.a);
   if (va.length>=2 && va[0].a-va[va.length-1].a>=1)
-    ins.push({t:`${t('insight_better')} «${va[0].v}»`,b:`${t('insight_vs')} ${va[0].a.toFixed(1)} ${t('insight_vs2')} ${va[va.length-1].a.toFixed(1)} «${va[va.length-1].v}».`});
+    ins.push({t:`${t('insight_better')} «${va[0].v}»`,b:`${t('insight_vs')} ${toDisplay(va[0].a).toFixed(1)} ${t('insight_vs2')} ${toDisplay(va[va.length-1].a).toFixed(1)} «${va[va.length-1].v}».`});
   const sc = hist.map(h=>h.score);
   const trend = sc[sc.length-1]-sc[0];
   if (sc.length>=3 && trend>=2) ins.push({t:t('insight_growing'),b:`${t('insight_growing_b')} ${sc[0]} — ${sc[sc.length-1]}. ${t('insight_growing_c')}`});
   if (sc.length>=3 && trend<=-2) ins.push({t:t('insight_fading'),b:`${t('insight_fading_b')} ${sc[0]} — ${sc[sc.length-1]}. ${t('insight_fading_c')}`});
   const a = avg(sc);
   if (sc.length>=4 && Math.max(...sc)-Math.min(...sc)<=1)
-    ins.push({t:t('insight_stable'),b:`${a.toFixed(1)}/4. ${a>=3?t('insight_stable_b'):t('insight_stable_c')}`});
+    ins.push({t:t('insight_stable'),b:`${toDisplay(a).toFixed(1)}/5. ${a>=3?t('insight_stable_b'):t('insight_stable_c')}`});
   if (!ins.length) ins.push({t:t('insight_more'),b:t('insight_more_b')});
   return ins;
 }
@@ -1980,7 +1983,7 @@ function shareShow(i) {
   ctx.fillStyle = accent;
   ctx.font = 'bold 120px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(a.toFixed(1), W/2, 490);
+  ctx.fillText(toDisplay(a).toFixed(1), W/2, 490);
   ctx.fillStyle = text2;
   ctx.font = '32px sans-serif';
   ctx.fillText(t('share_avg'), W/2, 530);
@@ -2133,7 +2136,7 @@ function viewShow(i) {
       </div>
 
       <div class="metrics" style="margin-bottom:14px">
-        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">${t('hist_score')}</div></div>
+        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('hist_score'}</div></div>
         <div class="metric"><div class="metric-val">${sc.length}</div><div class="metric-lbl">${t('share_jokes')}</div></div>
         <div class="metric"><div class="metric-val">${sc.filter(v=>v===4).length}</div><div class="metric-lbl">${t('share_bombed')}</div></div>
       </div>
