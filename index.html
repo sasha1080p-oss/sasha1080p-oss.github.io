@@ -466,6 +466,13 @@ body.theme-pink { background: var(--bg); }
         </button>
       </div>
 
+      <div style="margin-top:16px;padding:12px 14px;background:var(--bg3);border-radius:var(--radius-sm)">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Debug</div>
+        <div style="font-size:12px;color:var(--text2)" id="debug-tgid">TG ID: загрузка...</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px" id="debug-shows">Shows: —</div>
+        <button onclick="debugSync()" style="margin-top:8px;padding:6px 12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;cursor:pointer">Sync now</button>
+      </div>
+
       <div style="margin-top:32px;text-align:center;padding-bottom:8px">
         <div style="font-size:12px;color:var(--text3)" id="creator-lbl">Создатель</div>
         <div style="font-size:14px;font-weight:500;color:var(--text2);margin-top:4px" id="creator-name">Саша Нижегородцев</div>
@@ -1436,6 +1443,10 @@ function buildInsights(ji, hist) {
 
 /* ── VENUES ── */
 function renderVenues() {
+  const idEl = document.getElementById('debug-tgid');
+  const showsEl = document.getElementById('debug-shows');
+  if (idEl) idEl.textContent = `TG ID: ${telegramId || 'НЕТ'}`;
+  if (showsEl) showsEl.textContent = `Local shows: ${shows.length}`;
   const el = document.getElementById('venue-cards');
   if (!venues.length) {
     el.innerHTML = '<div class="empty"><div class="empty-text">Добавь первую площадку</div></div>';
@@ -1596,6 +1607,26 @@ function translateAud(aud) {
   };
   return map[aud]?.[lang] || aud;
 }
+async function debugSync() {
+  const idEl = document.getElementById('debug-tgid');
+  const showsEl = document.getElementById('debug-shows');
+  idEl.textContent = `TG ID: ${telegramId || 'НЕТ'}`;
+  if (!telegramId) {
+    showsEl.textContent = 'Нет ID — синхронизация недоступна';
+    return;
+  }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/shows?telegram_id=eq.${telegramId}&select=id,venue,date`, {
+      headers: sbHeaders()
+    });
+    const rows = await res.json();
+    showsEl.textContent = `Supabase shows: ${rows.length}`;
+    toast(`ID: ${telegramId} | Shows в базе: ${rows.length}`);
+  } catch(e) {
+    showsEl.textContent = `Ошибка: ${e.message}`;
+  }
+}
+
 const TIPS = [
   {
     ru: 'Записывай аудио/видео каждого выступления. Сложная часть: послушай это и расшифруй все, что ты хочешь сказать снова. Иногда это удручает, но заставляет тебя выполнять самую сложную часть — сидеть и писать. Обычно ты придумываешь, что добавить или изменить.',
