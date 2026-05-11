@@ -671,7 +671,11 @@ async function loadData() {
       // Load shows with ratings
       const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
       if (sRows.length) {
-        const rRows = await sbGet('ratings', `show_id=in.(${sRows.map(s=>s.id).join(',')})`);
+        const showIds = sRows.map(s => s.id);
+        let rRows = [];
+        if (showIds.length > 0) {
+          rRows = await sbGet('ratings', `show_id=in.(${showIds.join(',')})`);
+        }
         shows = sRows.map(s => ({
           id: s.id,
           venue: s.venue,
@@ -679,7 +683,9 @@ async function loadData() {
           date: s.date,
           noteGood: s.note || '',
           ratings: Object.fromEntries(
-            rRows.filter(r => r.show_id === s.id).map(r => [r.joke_index, r.score])
+            rRows
+              .filter(r => r.show_id === s.id)
+              .map(r => [r.joke_index, r.score])
           )
         }));
       } else {
