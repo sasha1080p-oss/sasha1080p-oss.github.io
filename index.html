@@ -687,23 +687,24 @@ async function loadData() {
     // Shows + ratings
     const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
     if (sRows.length) {
-      const showIds = sRows.map(s => s.id);
-      let rRows = [];
-      if (showIds.length > 0) {
-        rRows = await sbGet('ratings', `show_id=in.(${showIds.map(id => `"${id}"`).join(',')})`);
+      // Грузим рейтинги для каждого шоу отдельно (избегаем проблем с IN + UUID)
+      const sbShows = [];
+      for (const s of sRows) {
+        let rRows = [];
+        try {
+          rRows = await sbGet('ratings', `show_id=eq.${s.id}`);
+        } catch(e) { rRows = []; }
+        sbShows.push({
+          id: s.id,
+          venue: s.venue,
+          aud: s.aud,
+          date: s.date,
+          noteGood: s.note || '',
+          ratings: Object.fromEntries(
+            rRows.map(r => [r.joke_index, r.score])
+          )
+        });
       }
-      const sbShows = sRows.map(s => ({
-        id: s.id,
-        venue: s.venue,
-        aud: s.aud,
-        date: s.date,
-        noteGood: s.note || '',
-        ratings: Object.fromEntries(
-          rRows
-            .filter(r => r.show_id === s.id)
-            .map(r => [r.joke_index, r.score])
-        )
-      }));
       // Берём Supabase если там больше или столько же шоу
       if (sbShows.length >= shows.length) {
         shows = sbShows;
