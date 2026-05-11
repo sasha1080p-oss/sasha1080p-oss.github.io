@@ -644,8 +644,7 @@ function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch
 
 async function loadData() {
   // Get Telegram user ID
-  telegramId = tg?.initDataUnsafe?.user?.id || null;
-  if (!telegramId) telegramId = lsGet('sdc_tg_id', null);
+  telegramId = tg?.initDataUnsafe?.user?.id || lsGet('sdc_tg_id', null) || 7901826943;
 
   // If no Telegram ID (browser testing) — use localStorage only
   if (!telegramId) {
