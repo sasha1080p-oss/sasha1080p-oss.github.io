@@ -704,13 +704,17 @@ async function loadData() {
           aud: s.aud,
           date: s.date,
           noteGood: s.note || '',
+          updated_at: s.updated_at || null,
           ratings: Object.fromEntries(
             rRows.map(r => [r.joke_index, r.score])
           )
         });
       }
-      // Берём Supabase если там больше или столько же шоу
-      if (sbShows.length >= shows.length) {
+      // Берём Supabase если там больше шоу
+      // или если последнее обновление в Supabase новее чем локальное
+      const sbLatest = sbShows.reduce((max, s) => s.updated_at > max ? s.updated_at : max, '');
+      const lsLatest = shows.reduce((max, s) => (s.updated_at||'') > max ? (s.updated_at||'') : max, '');
+      if (sbShows.length >= shows.length || sbLatest > lsLatest) {
         shows = sbShows;
         lsSet('sdc_shows', shows);
       }
@@ -778,7 +782,8 @@ async function persist() {
           venue: s.venue,
           aud: s.aud,
           date: s.date,
-          note: s.noteGood || ''
+          note: s.noteGood || '',
+          updated_at: s.updated_at || new Date().toISOString()
         })
       });
       if (res.ok) {
@@ -802,7 +807,7 @@ async function persist() {
       await fetch(`${SUPABASE_URL}/rest/v1/shows?id=eq.${s.id}`, {
         method: 'PATCH',
         headers: sbHeaders(),
-        body: JSON.stringify({ note: s.noteGood || '' })
+        body: JSON.stringify({ note: s.noteGood || '', updated_at: new Date().toISOString() })
       });
       await sbDelete('ratings', `show_id=eq.${s.id}`);
       const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
@@ -1150,7 +1155,7 @@ function saveShow() {
   const dateVal = document.getElementById('l-date').value;
   const dateISO = dateVal || new Date().toISOString().split('T')[0];
   const noteGood = document.getElementById('l-note-good').value.trim();
-  shows.push({ venue, aud, date: dateISO, ratings:{...logRatings}, noteGood });
+  shows.push({ localId: crypto.randomUUID(), venue, aud, date: dateISO, ratings:{...logRatings}, noteGood, updated_at: new Date().toISOString() });
   persist();
   if (tg) tg.HapticFeedback?.notificationOccurred('success');
   toast(t('log_save_ok'));
@@ -1562,13 +1567,22 @@ function resetAll() {
     // Удаляем всё из Supabase напрямую (минуя защиту persist)
     if (telegramId) {
       try {
+        // Сначала удаляем рейтинги через show_id
+        const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}&select=id`);
+        for (const s of sRows) {
+          await sbDelete('ratings', `show_id=eq.${s.id}`);
+        }
         await sbDelete('shows', `telegram_id=eq.${telegramId}`);
         await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
         await sbDelete('venues', `telegram_id=eq.${telegramId}`);
         // Записываем дефолтные шутки и площадки
         await sbUpsert('jokes', jokes.map((name, i) => ({ telegram_id: telegramId, name, position: i })));
         await sbUpsert('venues', venues.map(name => ({ telegram_id: telegramId, name })));
-      } catch(e) { console.error('Reset Supabase error:', e); }
+        toast('Сброс выполнен ✓');
+      } catch(e) {
+        console.error('Reset Supabase error:', e);
+        lsSet('sdc_last_error', 'reset: ' + e.message);
+      }
     }
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
     toast(t('settings_reset_done'));
