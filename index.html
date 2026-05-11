@@ -673,7 +673,7 @@ async function loadData() {
         const showIds = sRows.map(s => s.id);
         let rRows = [];
         if (showIds.length > 0) {
-          rRows = await sbGet('ratings', `show_id=in.(${showIds.join(',')})`);
+          rRows = await sbGet('ratings', `show_id=in.(${showIds.map(id => `"${id}"`).join(',')})`);
         }
         shows = sRows.map(s => ({
           id: s.id,
