@@ -646,68 +646,13 @@ function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch
 async function loadData() {
   // Get Telegram user ID
   telegramId = tg?.initDataUnsafe?.user?.id || lsGet('sdc_tg_id', null) || 7901826943;
+  console.log('telegramId:', telegramId);
+  if (telegramId) lsSet('sdc_tg_id', telegramId);
 
-  // If no Telegram ID (browser testing) — use localStorage only
-  if (!telegramId) {
-    jokes  = lsGet('sdc_jokes',  null);
-    shows  = lsGet('sdc_shows',  null);
-    venues = lsGet('sdc_venues', null);
-  } else {
-    lsSet('sdc_tg_id', telegramId);
-
-    try {
-      // Ensure user exists
-      await sbUpsert('users', { telegram_id: telegramId });
-
-      // Load jokes — fall back to localStorage if Supabase is empty
-      const jRows = await sbGet('jokes', `telegram_id=eq.${telegramId}`);
-      jokes = jRows.length ? jRows.map(r => r.name) : lsGet('sdc_jokes', null);
-
-      // Load venues — fall back to localStorage if Supabase is empty
-      const vRows = await sbGet('venues', `telegram_id=eq.${telegramId}`);
-      venues = vRows.length ? vRows.map(r => r.name) : lsGet('sdc_venues', null);
-
-      // Load shows with ratings — fall back to localStorage if Supabase is empty
-      const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
-      if (sRows.length) {
-        const showIds = sRows.map(s => s.id);
-        let rRows = [];
-        if (showIds.length > 0) {
-          rRows = await sbGet('ratings', `show_id=in.(${showIds.map(id => `"${id}"`).join(',')})`);
-        }
-        shows = sRows.map(s => ({
-          id: s.id,
-          venue: s.venue,
-          aud: s.aud,
-          date: s.date,
-          noteGood: s.note || '',
-          ratings: Object.fromEntries(
-            rRows
-              .filter(r => r.show_id === s.id)
-              .map(r => [r.joke_index, r.score])
-          )
-        }));
-      } else {
-        // Supabase empty — trust localStorage, and re-sync it up to Supabase
-        const lsShows = lsGet('sdc_shows', null);
-        if (lsShows && lsShows.length) {
-          shows = lsShows.map(s => ({ ...s, id: s.id || null }));
-          // Strip IDs so persist() will re-insert them (IDs from a previous install may be stale)
-          shows = shows.map(s => ({ ...s, id: undefined }));
-          // Immediately persist so Supabase is populated
-          setTimeout(() => persist(), 0);
-        } else {
-          shows = [];
-        }
-      }
-    } catch(e) {
-      console.error('Supabase load error:', e); lsSet('sdc_last_error', e.message);
-      // Network/auth failure — fall back to localStorage entirely
-      jokes  = lsGet('sdc_jokes',  null);
-      shows  = lsGet('sdc_shows',  null);
-      venues = lsGet('sdc_venues', null);
-    }
-  }
+  // 1. Сначала ВСЕГДА грузим из localStorage — быстро и надёжно
+  jokes  = lsGet('sdc_jokes',  null);
+  shows  = lsGet('sdc_shows',  null);
+  venues = lsGet('sdc_venues', null);
 
   lang = lsGet('sdc_lang', 'ru');
   if (!jokes  || !jokes.length)  jokes  = getSeedJokes();
@@ -718,20 +663,89 @@ async function loadData() {
   applyTheme();
   applyLang();
   renderLog();
+
+  // 2. Потом пробуем Supabase — если данных больше, обновляем
+  if (!telegramId) return;
+  try {
+    lsSet('sdc_last_error', null);
+    await sbUpsert('users', { telegram_id: telegramId });
+
+    // Jokes
+    const jRows = await sbGet('jokes', `telegram_id=eq.${telegramId}`);
+    if (jRows.length) {
+      jokes = jRows.map(r => r.name);
+      lsSet('sdc_jokes', jokes);
+    }
+
+    // Venues
+    const vRows = await sbGet('venues', `telegram_id=eq.${telegramId}`);
+    if (vRows.length) {
+      venues = vRows.map(r => r.name);
+      lsSet('sdc_venues', venues);
+    }
+
+    // Shows + ratings
+    const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
+    if (sRows.length) {
+      const showIds = sRows.map(s => s.id);
+      let rRows = [];
+      if (showIds.length > 0) {
+        rRows = await sbGet('ratings', `show_id=in.(${showIds.map(id => `"${id}"`).join(',')})`);
+      }
+      const sbShows = sRows.map(s => ({
+        id: s.id,
+        venue: s.venue,
+        aud: s.aud,
+        date: s.date,
+        noteGood: s.note || '',
+        ratings: Object.fromEntries(
+          rRows
+            .filter(r => r.show_id === s.id)
+            .map(r => [r.joke_index, r.score])
+        )
+      }));
+      // Берём Supabase если там больше или столько же шоу
+      if (sbShows.length >= shows.length) {
+        shows = sbShows;
+        lsSet('sdc_shows', shows);
+      }
+    } else if (shows.length) {
+      // Supabase пуст, но локально есть — заливаем вверх
+      setTimeout(() => persist(), 0);
+    }
+
+    // Перерисовываем с актуальными данными
+    applyLang();
+    renderLog();
+
+  } catch(e) {
+    console.error('Supabase load error:', e);
+    lsSet('sdc_last_error', e.message);
+    // Остаёмся на localStorage — данные уже загружены выше
+  }
 }
 
 async function persist() {
-  // Always save to localStorage as backup FIRST
+  // 1. Всегда сохраняем локально ПЕРВЫМ ДЕЛОМ
   lsSet('sdc_jokes',  jokes);
   lsSet('sdc_shows',  shows);
   lsSet('sdc_venues', venues);
 
-  if (!telegramId) return;
+  if (!telegramId) {
+    console.log('Нет telegramId, сохраняем только локально');
+    return;
+  }
+
+  // Защита от затирания пустыми данными
+  if (!shows.length && lsGet('sdc_shows', []).length) {
+    console.log('Блокируем перезапись пустыми данными');
+    return;
+  }
 
   try {
-    // ── Save jokes ──
-    await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
+    // ── Jokes: upsert без delete ──
     if (jokes.length) {
+      await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
       await sbUpsert('jokes', jokes.map((name, i) => ({
         telegram_id: telegramId,
         name,
@@ -739,17 +753,16 @@ async function persist() {
       })));
     }
 
-    // ── Save venues ──
-    await sbDelete('venues', `telegram_id=eq.${telegramId}`);
+    // ── Venues: upsert без delete ──
     if (venues.length) {
+      await sbDelete('venues', `telegram_id=eq.${telegramId}`);
       await sbUpsert('venues', venues.map(name => ({
         telegram_id: telegramId,
         name
       })));
     }
 
-    // ── Save shows ──
-    // Insert shows that have no Supabase id yet
+    // ── Shows: только новые вставляем, существующие обновляем ──
     const newShows = shows.filter(s => !s.id);
     for (const s of newShows) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/shows`, {
@@ -766,7 +779,6 @@ async function persist() {
       if (res.ok) {
         const [row] = await res.json();
         s.id = row.id;
-        // Save ratings for this show
         const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
           show_id: row.id,
           joke_index: parseInt(ji),
@@ -779,7 +791,7 @@ async function persist() {
       }
     }
 
-    // Update existing shows (notes + ratings)
+    // Обновляем существующие шоу (заметки + рейтинги)
     const existingShows = shows.filter(s => s.id);
     for (const s of existingShows) {
       await fetch(`${SUPABASE_URL}/rest/v1/shows?id=eq.${s.id}`, {
@@ -787,7 +799,6 @@ async function persist() {
         headers: sbHeaders(),
         body: JSON.stringify({ note: s.noteGood || '' })
       });
-      // Re-sync ratings: delete all and re-insert
       await sbDelete('ratings', `show_id=eq.${s.id}`);
       const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
         show_id: s.id,
@@ -798,15 +809,12 @@ async function persist() {
       if (ratingRows.length) await sbUpsert('ratings', ratingRows);
     }
 
-    // Delete shows removed locally (those that had an id but are no longer in shows[])
-    // (cascade delete on ratings is handled by DB foreign key — ensure it's set in Supabase)
-
-    // Re-save LS with updated ids (new shows now have ids from Supabase)
+    // Сохраняем обратно с id от Supabase
     lsSet('sdc_shows', shows);
 
   } catch(e) {
     console.error('Supabase persist error:', e);
-    // LS is already saved above — data is safe locally
+    // LS уже сохранён выше — данные в безопасности
   }
 }
 
