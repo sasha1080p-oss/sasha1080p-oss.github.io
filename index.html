@@ -597,7 +597,9 @@ function sbHeaders() {
 }
 
 async function sbGet(table, filter = '') {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}&order=created_at.asc`, {
+  // ratings таблица может не иметь created_at — не сортируем её
+  const order = table === 'ratings' ? '' : '&order=created_at.asc';
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}${order}`, {
     headers: sbHeaders()
   });
   if (!res.ok) throw new Error(`sbGet ${table} failed: ${res.status}`);
@@ -1675,17 +1677,15 @@ async function debugSync() {
     showsEl.textContent = 'Нет ID — синхронизация недоступна';
     return;
   }
-  showsEl.textContent = 'Синхронизация...';
+  showsEl.textContent = 'Проверяю...';
   try {
-    // Push everything local up to Supabase
-    await persist();
-    // Then read back from Supabase to verify
+    // Только проверяем сколько шоу в Supabase — ничего не пишем
     const rows = await sbGet('shows', `telegram_id=eq.${telegramId}&select=id,venue,date`);
     showsEl.textContent = `Local: ${shows.length} | Supabase: ${rows.length}`;
-    toast(`Sync OK · ${rows.length} шоу в базе`);
+    toast(`Local: ${shows.length} · Supabase: ${rows.length}`);
   } catch(e) {
     showsEl.textContent = `Ошибка: ${e.message}`;
-    toast('Ошибка синхронизации');
+    toast('Ошибка');
   }
 }
 
