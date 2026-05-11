@@ -466,6 +466,14 @@ body.theme-pink { background: var(--bg); }
         </button>
       </div>
 
+      <div style="margin-top:16px;padding:12px 14px;background:var(--bg3);border-radius:var(--radius-sm)">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Debug</div>
+        <div style="font-size:12px;color:var(--text2)" id="debug-tgid">TG ID: загрузка...</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px" id="debug-shows">Shows: —</div>
+        <button onclick="debugSync()" style="margin-top:8px;padding:6px 12px;background:var(--accent-dim);border:0.5px solid var(--accent);color:var(--accent);border-radius:8px;font-size:12px;cursor:pointer">Sync now</button>
+        <button onclick="forceReloadFromSupabase()" style="margin-top:8px;margin-left:8px;padding:6px 12px;background:rgba(255,69,69,0.1);border:0.5px solid var(--red);color:var(--red);border-radius:8px;font-size:12px;cursor:pointer">Force reload</button>
+      </div>
+
       <div style="margin-top:32px;text-align:center;padding-bottom:8px">
         <div style="font-size:12px;color:var(--text3)" id="creator-lbl">Создатель</div>
         <div style="font-size:14px;font-weight:500;color:var(--text2);margin-top:4px" id="creator-name">Саша Нижегородцев</div>
@@ -589,22 +597,25 @@ function sbHeaders() {
 }
 
 async function sbGet(table, filter = '') {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}&order=created_at.asc`, {
-      headers: sbHeaders()
-    });
-    return res.ok ? await res.json() : [];
-  } catch { return []; }
+  // ratings таблица может не иметь created_at — не сортируем её
+  const order = table === 'ratings' ? '' : '&order=created_at.asc';
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${filter}${order}`, {
+    headers: sbHeaders()
+  });
+  if (!res.ok) throw new Error(`sbGet ${table} failed: ${res.status}`);
+  return await res.json();
 }
 
 async function sbUpsert(table, data) {
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
-      method: 'POST',
-      headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
-      body: JSON.stringify(data)
-    });
-  } catch {}
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...sbHeaders(), 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`sbUpsert ${table} failed: ${res.status} ${err}`);
+  }
 }
 
 async function sbDelete(table, filter) {
@@ -638,78 +649,112 @@ function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch
 
 async function loadData() {
   // Get Telegram user ID
-  telegramId = tg?.initDataUnsafe?.user?.id || lsGet('sdc_tg_id', null);
+  telegramId = tg?.initDataUnsafe?.user?.id || lsGet('sdc_tg_id', null) || 7901826943;
+  console.log('telegramId:', telegramId);
+  if (telegramId) lsSet('sdc_tg_id', telegramId);
 
-  // If no Telegram ID (browser testing) — use localStorage only
-  if (!telegramId) {
-    jokes = lsGet('sdc_jokes', null);
-    shows = lsGet('sdc_shows', null);
-    venues = lsGet('sdc_venues', null);
-  } else {
-    lsSet('sdc_tg_id', telegramId);
-
-    // Load from Supabase
-    try {
-      // Ensure user exists
-      await sbUpsert('users', { telegram_id: telegramId });
-
-      // Load jokes
-      const jRows = await sbGet('jokes', `telegram_id=eq.${telegramId}`);
-      jokes = jRows.length ? jRows.map(r => r.name) : null;
-
-      // Load venues
-      const vRows = await sbGet('venues', `telegram_id=eq.${telegramId}`);
-      venues = vRows.length ? vRows.map(r => r.name) : null;
-
-      // Load shows with ratings
-      const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
-      if (sRows.length) {
-        const rRows = await sbGet('ratings', `show_id=in.(${sRows.map(s=>s.id).join(',')})`);
-        shows = sRows.map(s => ({
-          id: s.id,
-          venue: s.venue,
-          aud: s.aud,
-          date: s.date,
-          noteGood: s.note || '',
-          ratings: Object.fromEntries(
-            rRows.filter(r => r.show_id === s.id).map(r => [r.joke_index, r.score])
-          )
-        }));
-      } else {
-        shows = [];
-      }
-    } catch(e) {
-      console.error('Supabase load error:', e);
-      // Fallback to localStorage
-      jokes = lsGet('sdc_jokes', null);
-      shows = lsGet('sdc_shows', null);
-      venues = lsGet('sdc_venues', null);
-    }
-  }
+  // 1. Сначала ВСЕГДА грузим из localStorage — быстро и надёжно
+  jokes  = lsGet('sdc_jokes',  null);
+  shows  = lsGet('sdc_shows',  null);
+  venues = lsGet('sdc_venues', null);
 
   lang = lsGet('sdc_lang', 'ru');
-  if (!jokes || !jokes.length) jokes = getSeedJokes();
-  if (!shows) shows = [];
+  if (!jokes  || !jokes.length)  jokes  = getSeedJokes();
+  if (!shows)                     shows  = [];
   if (!venues || !venues.length) venues = getSeedVenues();
 
   storageReady = true;
   applyTheme();
   applyLang();
   renderLog();
+
+  // 2. Потом пробуем Supabase — если данных больше, обновляем
+  if (!telegramId) return;
+  try {
+    lsSet('sdc_last_error', null);
+    await sbUpsert('users', { telegram_id: telegramId });
+
+    // Jokes
+    const jRows = await sbGet('jokes', `telegram_id=eq.${telegramId}`);
+    if (jRows.length) {
+      jokes = jRows.map(r => r.name);
+      lsSet('sdc_jokes', jokes);
+    }
+
+    // Venues
+    const vRows = await sbGet('venues', `telegram_id=eq.${telegramId}`);
+    if (vRows.length) {
+      venues = vRows.map(r => r.name);
+      lsSet('sdc_venues', venues);
+    }
+
+    // Shows + ratings
+    const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}`);
+    if (sRows.length) {
+      // Грузим рейтинги для каждого шоу отдельно (избегаем проблем с IN + UUID)
+      const sbShows = [];
+      for (const s of sRows) {
+        let rRows = [];
+        try {
+          rRows = await sbGet('ratings', `show_id=eq.${s.id}`);
+        } catch(e) { rRows = []; }
+        sbShows.push({
+          id: s.id,
+          venue: s.venue,
+          aud: s.aud,
+          date: s.date,
+          noteGood: s.note || '',
+          updated_at: s.updated_at || null,
+          ratings: Object.fromEntries(
+            rRows.map(r => [r.joke_index, r.score])
+          )
+        });
+      }
+      // Берём Supabase если там больше шоу
+      // или если последнее обновление в Supabase новее чем локальное
+      const sbLatest = sbShows.reduce((max, s) => s.updated_at > max ? s.updated_at : max, '');
+      const lsLatest = shows.reduce((max, s) => (s.updated_at||'') > max ? (s.updated_at||'') : max, '');
+      if (sbShows.length >= shows.length || sbLatest > lsLatest) {
+        shows = sbShows;
+        lsSet('sdc_shows', shows);
+      }
+    } else if (shows.length) {
+      // Supabase пуст, но локально есть — заливаем вверх
+      setTimeout(() => persist(), 0);
+    }
+
+    // Перерисовываем с актуальными данными
+    applyLang();
+    renderLog();
+
+  } catch(e) {
+    console.error('Supabase load error:', e);
+    lsSet('sdc_last_error', e.message);
+    // Остаёмся на localStorage — данные уже загружены выше
+  }
 }
 
 async function persist() {
-  // Always save to localStorage as backup
-  lsSet('sdc_jokes', jokes);
-  lsSet('sdc_shows', shows);
+  // 1. Всегда сохраняем локально ПЕРВЫМ ДЕЛОМ
+  lsSet('sdc_jokes',  jokes);
+  lsSet('sdc_shows',  shows);
   lsSet('sdc_venues', venues);
 
-  if (!telegramId) return;
+  if (!telegramId) {
+    console.log('Нет telegramId, сохраняем только локально');
+    return;
+  }
+
+  // Защита от затирания пустыми данными
+  if (!shows.length && lsGet('sdc_shows', []).length) {
+    console.log('Блокируем перезапись пустыми данными');
+    return;
+  }
 
   try {
-    // Save jokes
-    await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
+    // ── Jokes: upsert без delete ──
     if (jokes.length) {
+      await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
       await sbUpsert('jokes', jokes.map((name, i) => ({
         telegram_id: telegramId,
         name,
@@ -717,16 +762,16 @@ async function persist() {
       })));
     }
 
-    // Save venues
-    await sbDelete('venues', `telegram_id=eq.${telegramId}`);
+    // ── Venues: upsert без delete ──
     if (venues.length) {
+      await sbDelete('venues', `telegram_id=eq.${telegramId}`);
       await sbUpsert('venues', venues.map(name => ({
         telegram_id: telegramId,
         name
       })));
     }
 
-    // Save shows (only new ones without id)
+    // ── Shows: только новые вставляем, существующие обновляем ──
     const newShows = shows.filter(s => !s.id);
     for (const s of newShows) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/shows`, {
@@ -737,13 +782,13 @@ async function persist() {
           venue: s.venue,
           aud: s.aud,
           date: s.date,
-          note: s.noteGood || ''
+          note: s.noteGood || '',
+          updated_at: s.updated_at || new Date().toISOString()
         })
       });
       if (res.ok) {
         const [row] = await res.json();
         s.id = row.id;
-        // Save ratings
         const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
           show_id: row.id,
           joke_index: parseInt(ji),
@@ -751,18 +796,19 @@ async function persist() {
           score
         }));
         if (ratingRows.length) await sbUpsert('ratings', ratingRows);
+      } else {
+        console.error('Failed to insert show:', await res.text());
       }
     }
 
-    // Update existing shows (notes/ratings changed)
+    // Обновляем существующие шоу (заметки + рейтинги)
     const existingShows = shows.filter(s => s.id);
     for (const s of existingShows) {
       await fetch(`${SUPABASE_URL}/rest/v1/shows?id=eq.${s.id}`, {
         method: 'PATCH',
         headers: sbHeaders(),
-        body: JSON.stringify({ note: s.noteGood || '' })
+        body: JSON.stringify({ note: s.noteGood || '', updated_at: new Date().toISOString() })
       });
-      // Update ratings
       await sbDelete('ratings', `show_id=eq.${s.id}`);
       const ratingRows = Object.entries(s.ratings).map(([ji, score]) => ({
         show_id: s.id,
@@ -773,18 +819,22 @@ async function persist() {
       if (ratingRows.length) await sbUpsert('ratings', ratingRows);
     }
 
-    // Delete removed shows
-    const existingIds = shows.filter(s => s.id).map(s => s.id);
-    // (handled by cascade delete when show is removed)
+    // Сохраняем обратно с id от Supabase
+    lsSet('sdc_shows', shows);
 
   } catch(e) {
     console.error('Supabase persist error:', e);
+    lsSet('sdc_last_error', 'persist: ' + e.message);
+    // LS уже сохранён выше — данные в безопасности
   }
 }
 
 
 /* ── Helpers ── */
 function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+// Конвертация внутренней оценки (0-4) в отображаемую (1-5)
+function toDisplay(score) { return score + 1; }
+function avgDisplay(arr) { return arr.length ? toDisplay(avg(arr)) : 0; }
 function barColor(a) { return a>=3.5?'#c8ff00':a>=2.5?'#ffaa00':'#ff4545'; }
 function scClass(a) { return a>=3.5?'sc-high':a>=2.5?'sc-mid':'sc-low'; }
 
@@ -1108,7 +1158,7 @@ function saveShow() {
   const dateVal = document.getElementById('l-date').value;
   const dateISO = dateVal || new Date().toISOString().split('T')[0];
   const noteGood = document.getElementById('l-note-good').value.trim();
-  shows.push({ venue, aud, date: dateISO, ratings:{...logRatings}, noteGood });
+  shows.push({ localId: crypto.randomUUID(), venue, aud, date: dateISO, ratings:{...logRatings}, noteGood, updated_at: new Date().toISOString() });
   persist();
   if (tg) tg.HapticFeedback?.notificationOccurred('success');
   toast(t('log_save_ok'));
@@ -1131,8 +1181,8 @@ function renderStats() {
 
   document.getElementById('st-metrics').innerHTML = `
     <div class="metric"><div class="metric-val">${fs.length}</div><div class="metric-lbl">${t('stats_shows')}</div></div>
-    <div class="metric"><div class="metric-val">${allSc.length?ga.toFixed(1):'—'}</div><div class="metric-lbl">${t('stats_all')}</div></div>
-    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?last5Avg.toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">${t('stats_last3')}</div></div>`;
+    <div class="metric"><div class="metric-val">${allSc.length?toDisplay(ga).toFixed(1):'—'}</div><div class="metric-lbl">${t('stats_all')}</div></div>
+    <div class="metric"><div class="metric-val" style="${trendColor}">${last5Avg!==null?toDisplay(last5Avg).toFixed(1)+' '+trendStr:'—'}</div><div class="metric-lbl">${t('stats_last3')}</div></div>`;
 
   if (fs.length >= 3) {
     const showAvgs = fs.map(s => {
@@ -1182,7 +1232,7 @@ function renderStats() {
           <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(r.a)}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px">
             <span style="font-size:11px;color:var(--text3)">${r.cnt} ${t('checks')}</span>
-            <span style="font-size:12px;color:var(--text2)">${r.a.toFixed(1)} / 4</span>
+            <span style="font-size:12px;color:var(--text2)">${toDisplay(r.a).toFixed(1)} / 5</span>
           </div>
         </div>
       </div>
@@ -1241,7 +1291,7 @@ function renderJokesList() {
           <div class="bar-track"><div class="bar-fill" style="width:${Math.round((a/4)*100)}%;background:${barColor(a)}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:4px">
             ${trendEl}<span style="font-size:11px;color:var(--text3)">${sc.length} пров.</span>
-            <span style="font-size:12px;color:var(--text2)">${a.toFixed(1)}/4</span>
+            <span style="font-size:12px;color:var(--text2)">${toDisplay(a).toFixed(1)}/5</span>
           </div>
         </div>`:`<div class="joke-row-sub">${t('jokes_no_data')}</div>`}
       </div>
@@ -1354,7 +1404,7 @@ function _renderDetail() {
   const trendText = trend===null?'—':trend>0?t('trend_up'):trend<0?t('trend_dn'):t('trend_eq');
   const trendColor = trend===null||trend===0?'var(--text3)':trend>0?'var(--accent)':'var(--red)';
   document.getElementById('d-metrics').innerHTML = `
-    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">${t('detail_score')}</div></div>
+    <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('detail_score'}</div></div>
     <div class="metric"><div class="metric-val">${filtH.length}</div><div class="metric-lbl">${t('detail_checks')}</div></div>
     <div class="metric"><div class="metric-val" style="font-size:14px;color:${trendColor}">${trendText}</div><div class="metric-lbl">${t('detail_trend')}</div></div>`;
 
@@ -1408,7 +1458,7 @@ function _drawChart(hist) {
       responsive:true,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+getRnames()[ctx.raw]}}},
       scales:{
-        y:{min:0,max:4,ticks:{stepSize:1,color:'#555',callback:v=>getRnames()[v]||''},grid:{color:'rgba(255,255,255,0.05)'}},
+        y:{min:0,max:4,ticks:{stepSize:1,color:'#555',callback:v=>getRnames()[v]?`${v+1}. ${getRnames()[v]}`:''},grid:{color:'rgba(255,255,255,0.05)'}},
         x:{ticks:{color:'#555',font:{size:10}},grid:{display:false}}
       }
     }
@@ -1422,20 +1472,24 @@ function buildInsights(ji, hist) {
   hist.forEach(h=>{ if(!byV[h.venue])byV[h.venue]=[]; byV[h.venue].push(h.score); });
   const va = Object.entries(byV).map(([v,sc])=>({v,a:avg(sc)})).sort((a,b)=>b.a-a.a);
   if (va.length>=2 && va[0].a-va[va.length-1].a>=1)
-    ins.push({t:`${t('insight_better')} «${va[0].v}»`,b:`${t('insight_vs')} ${va[0].a.toFixed(1)} ${t('insight_vs2')} ${va[va.length-1].a.toFixed(1)} «${va[va.length-1].v}».`});
+    ins.push({t:`${t('insight_better')} «${va[0].v}»`,b:`${t('insight_vs')} ${toDisplay(va[0].a).toFixed(1)} ${t('insight_vs2')} ${toDisplay(va[va.length-1].a).toFixed(1)} «${va[va.length-1].v}».`});
   const sc = hist.map(h=>h.score);
   const trend = sc[sc.length-1]-sc[0];
   if (sc.length>=3 && trend>=2) ins.push({t:t('insight_growing'),b:`${t('insight_growing_b')} ${sc[0]} — ${sc[sc.length-1]}. ${t('insight_growing_c')}`});
   if (sc.length>=3 && trend<=-2) ins.push({t:t('insight_fading'),b:`${t('insight_fading_b')} ${sc[0]} — ${sc[sc.length-1]}. ${t('insight_fading_c')}`});
   const a = avg(sc);
   if (sc.length>=4 && Math.max(...sc)-Math.min(...sc)<=1)
-    ins.push({t:t('insight_stable'),b:`${a.toFixed(1)}/4. ${a>=3?t('insight_stable_b'):t('insight_stable_c')}`});
+    ins.push({t:t('insight_stable'),b:`${toDisplay(a).toFixed(1)}/5. ${a>=3?t('insight_stable_b'):t('insight_stable_c')}`});
   if (!ins.length) ins.push({t:t('insight_more'),b:t('insight_more_b')});
   return ins;
 }
 
 /* ── VENUES ── */
 function renderVenues() {
+  const idEl = document.getElementById('debug-tgid');
+  const showsEl = document.getElementById('debug-shows');
+  if (idEl) idEl.textContent = `TG ID: ${telegramId || 'НЕТ'}`;
+  const lastErr = lsGet('sdc_last_error', null); if (showsEl) showsEl.innerHTML = `Local: ${shows.length}${lastErr ? ' · ERR: ' + lastErr : ''}`;
   const el = document.getElementById('venue-cards');
   if (!venues.length) {
     el.innerHTML = '<div class="empty"><div class="empty-text">Добавь первую площадку</div></div>';
@@ -1505,15 +1559,39 @@ function deleteVenue(i) {
 }
 
 function resetAll() {
-  showConfirm(t('settings_reset_title'), t('settings_reset_text'), () => {
+  showConfirm(t('settings_reset_title'), t('settings_reset_text'), async () => {
     jokes = getSeedJokes();
     shows = SEED_SHOWS.slice();
     venues = getSeedVenues();
-    persist();
+    // Сохраняем локально
+    lsSet('sdc_jokes', jokes);
+    lsSet('sdc_shows', shows);
+    lsSet('sdc_venues', venues);
+    // Удаляем всё из Supabase напрямую (минуя защиту persist)
+    if (telegramId) {
+      try {
+        // Сначала удаляем рейтинги через show_id
+        const sRows = await sbGet('shows', `telegram_id=eq.${telegramId}&select=id`);
+        for (const s of sRows) {
+          await sbDelete('ratings', `show_id=eq.${s.id}`);
+        }
+        await sbDelete('shows', `telegram_id=eq.${telegramId}`);
+        await sbDelete('jokes', `telegram_id=eq.${telegramId}`);
+        await sbDelete('venues', `telegram_id=eq.${telegramId}`);
+        // Записываем дефолтные шутки и площадки
+        await sbUpsert('jokes', jokes.map((name, i) => ({ telegram_id: telegramId, name, position: i })));
+        await sbUpsert('venues', venues.map(name => ({ telegram_id: telegramId, name })));
+        toast('Сброс выполнен ✓');
+      } catch(e) {
+        console.error('Reset Supabase error:', e);
+        lsSet('sdc_last_error', 'reset: ' + e.message);
+      }
+    }
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
     toast(t('settings_reset_done'));
     renderVenues();
     renderLog();
+    renderStats();
   });
 }
 
@@ -1596,6 +1674,38 @@ function translateAud(aud) {
   };
   return map[aud]?.[lang] || aud;
 }
+async function forceReloadFromSupabase() {
+  // Clear local cache and reload everything from Supabase
+  lsSet('sdc_last_error', null);
+  localStorage.removeItem('sdc_shows');
+  localStorage.removeItem('sdc_jokes');
+  localStorage.removeItem('sdc_venues');
+  toast('Загружаю из Supabase...');
+  await loadData();
+  renderVenues();
+  toast('Готово!');
+}
+
+async function debugSync() {
+  const idEl    = document.getElementById('debug-tgid');
+  const showsEl = document.getElementById('debug-shows');
+  idEl.textContent = `TG ID: ${telegramId || 'НЕТ'}`;
+  if (!telegramId) {
+    showsEl.textContent = 'Нет ID — синхронизация недоступна';
+    return;
+  }
+  showsEl.textContent = 'Проверяю...';
+  try {
+    // Только проверяем сколько шоу в Supabase — ничего не пишем
+    const rows = await sbGet('shows', `telegram_id=eq.${telegramId}&select=id,venue,date`);
+    showsEl.textContent = `Local: ${shows.length} | Supabase: ${rows.length}`;
+    toast(`Local: ${shows.length} · Supabase: ${rows.length}`);
+  } catch(e) {
+    showsEl.textContent = `Ошибка: ${e.message}`;
+    toast('Ошибка');
+  }
+}
+
 const TIPS = [
   {
     ru: 'Записывай аудио/видео каждого выступления. Сложная часть: послушай это и расшифруй все, что ты хочешь сказать снова. Иногда это удручает, но заставляет тебя выполнять самую сложную часть — сидеть и писать. Обычно ты придумываешь, что добавить или изменить.',
@@ -1873,7 +1983,7 @@ function shareShow(i) {
   ctx.fillStyle = accent;
   ctx.font = 'bold 120px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(a.toFixed(1), W/2, 490);
+  ctx.fillText(toDisplay(a).toFixed(1), W/2, 490);
   ctx.fillStyle = text2;
   ctx.font = '32px sans-serif';
   ctx.fillText(t('share_avg'), W/2, 530);
@@ -2026,7 +2136,7 @@ function viewShow(i) {
       </div>
 
       <div class="metrics" style="margin-bottom:14px">
-        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?a.toFixed(1):'—'}</div><div class="metric-lbl">${t('hist_score')}</div></div>
+        <div class="metric"><div class="metric-val ${a!==null?scClass(a):''}">${a!==null?toDisplay(a).toFixed(1):'—'}</div><div class="metric-lbl">${t('hist_score'}</div></div>
         <div class="metric"><div class="metric-val">${sc.length}</div><div class="metric-lbl">${t('share_jokes')}</div></div>
         <div class="metric"><div class="metric-val">${sc.filter(v=>v===4).length}</div><div class="metric-lbl">${t('share_bombed')}</div></div>
       </div>
@@ -2095,9 +2205,17 @@ function saveEditShow(i) {
 }
 
 function deleteShow(i) {
-  showConfirm(t('hist_del_title'), `${shows[i].date} · ${shows[i].venue}`, () => {
+  showConfirm(t('hist_del_title'), `${shows[i].date} · ${shows[i].venue}`, async () => {
+    const removed = shows[i];
     shows.splice(i, 1);
-    persist();
+    // Delete from Supabase if it has an id (cascade will remove ratings too)
+    if (removed.id && telegramId) {
+      try {
+        await sbDelete('shows', `id=eq.${removed.id}`);
+      } catch(e) { console.error('deleteShow Supabase error:', e); }
+    }
+    // Always update localStorage
+    lsSet('sdc_shows', shows);
     if (tg) tg.HapticFeedback?.notificationOccurred('warning');
     toast(t('hist_deleted'));
     renderHistory();
